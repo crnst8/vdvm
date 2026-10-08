@@ -102,7 +102,9 @@ case "${1:-}" in
     # Separate build tree so the native dev build stays fast.
     build="$here/build-release"; artefacts="$build/Drums_artefacts/Release"
     cmake_args=(-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64")
-    build_all; run_tests; hosttest; pluginval
+    build_all; run_tests; hosttest
+    # pluginval crashes on opening any plugin on headless CI runners; run it locally.
+    [ -n "${VDVM_SKIP_PLUGINVAL:-}" ] || pluginval
     for f in "$artefacts/VST3/V.D.V.M.vst3/Contents/MacOS/V.D.V.M" "$artefacts/AU/V.D.V.M.component/Contents/MacOS/V.D.V.M"; do
       archs="$(lipo -archs "$f")"
       [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "not universal ($archs): $f"; exit 1; }

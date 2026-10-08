@@ -48,6 +48,8 @@ jobs:
       - name: Catalog for the bundled installer
         run: node plugin/scripts/fetch-catalog.mjs https://media.re20.one/ "$RUNNER_TEMP/factory"
       - name: Build, test and package
+        env:
+          VDVM_SKIP_PLUGINVAL: 1   # crashes on a headless runner; plugin/dev check runs it locally
         run: plugin/dev release "$RUNNER_TEMP/factory"
       - name: Publish
         env:

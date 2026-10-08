@@ -11,7 +11,7 @@
 
 1. Set `version` in `package.json` and run `npm install --package-lock-only`.
 2. Add an entry to `CHANGELOG.md`.
-3. Commit, then `git tag vX.Y.Z` and `git push origin main vX.Y.Z`.
+3. Run `plugin/dev check`, commit, then `git tag vX.Y.Z` and `git push origin main vX.Y.Z`.
 
 The push to `main` deploys the web app. The tag builds both installers on macOS and publishes them. The app shows the version under the logo.
 
@@ -34,7 +34,7 @@ Server state: `ssh vpsau3 /opt/drums/app/deploy/remote-deploy.sh status`.
 
 1. Checks that the tag matches `package.json`.
 2. Downloads the published catalog from media.re20.one (`plugin/scripts/fetch-catalog.mjs`).
-3. Runs `plugin/dev release` with it: universal build, core tests, host test, pluginval, both installers.
+3. Runs `plugin/dev release` with it: universal build, core tests, host test, both installers. pluginval crashes on headless runners, so it runs locally (`plugin/dev check`) before tagging.
 4. Uploads both installers to `vpsau2` and publishes them.
 
 On `vpsau2` the CI key can only run `~/bin/vdvm-downloads` (`deploy/downloads.sh`). `publish` checks both hashes, points `latest/` at the new version, rewrites `SHA256SUMS`, and deletes every other version, so one version is on disk at a time.
