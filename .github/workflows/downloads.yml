@@ -1,0 +1,76 @@
+# Tag vX.Y.Z → build the plugin installers on macOS → publish them on the
+# download host (dl.vdvm.crnst8.com), which then keeps only that version.
+#
+# The bundled installer packs the catalog published at media.re20.one.
+#
+# Secrets: DL_SSH_KEY (forced command deploy/downloads.sh), DL_KNOWN_HOSTS.
+# Variables: DL_HOST, DL_PORT, DL_USER. Set by deploy/bootstrap-downloads.sh.
+name: downloads
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: downloads
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  installers:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Version
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$v" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $v"; exit 1
+          fi
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/drums-plugin
+          key: juce-8.0.9-pluginval
+      - name: JUCE
+        run: |
+          [ -d ~/.cache/drums-plugin/juce-8.0.9 ] ||
+            git clone -q --depth 1 --branch 8.0.9 https://github.com/juce-framework/JUCE ~/.cache/drums-plugin/juce-8.0.9
+      - name: Catalog for the bundled installer
+        run: node plugin/scripts/fetch-catalog.mjs https://media.re20.one/ "$RUNNER_TEMP/factory"
+      - name: Build, test and package
+        run: plugin/dev release "$RUNNER_TEMP/factory"
+      - name: Publish
+        env:
+          KEY: ${{ secrets.DL_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DL_KNOWN_HOSTS }}
+          HOST: ${{ vars.DL_HOST }}
+          PORT: ${{ vars.DL_PORT }}
+          USER: ${{ vars.DL_USER }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/dl && chmod 600 ~/.ssh/dl
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          dl() { ssh -i ~/.ssh/dl -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$USER@$HOST" "$@"; }
+          dir=plugin/build-release/packages
+          for e in bundled unbundled; do
+            dl put "$VERSION" "$e" < "$dir/V.D.V.M-$VERSION-$e.pkg"
+          done
+          sum() { shasum -a 256 "$dir/V.D.V.M-$VERSION-$1.pkg" | cut -d' ' -f1; }
+          dl publish "$VERSION" "$(sum bundled)" "$(sum unbundled)"
+      - name: Check public links
+        run: |
+          for f in V.D.V.M-mac-with-samples.pkg V.D.V.M-mac.pkg; do
+            code=$(curl -sI -o /dev/null -w '%{http_code}' "https://dl.vdvm.crnst8.com/latest/$f")
+            [ "$code" = 200 ] || { echo "::error::latest/$f returned $code"; exit 1; }
+          done
+          curl -fsS https://dl.vdvm.crnst8.com/SHA256SUMS

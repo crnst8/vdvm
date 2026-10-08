@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "defs.schema.json",
+  "title": "Shared definitions",
+  "$defs": {
+    "id": {
+      "description": "Stable lowercase ASCII kebab-case identifier, assigned once.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "revision": {
+      "description": "First 16 hex chars of SHA-256 over compact UTF-8 JSON with recursively sorted object keys, array order preserved, and the root `revision` field omitted.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "sha256": {
+      "description": "Full lowercase hex SHA-256 of the served bytes.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativeUrl": {
+      "description": "URL relative to the configured catalog base URL. No scheme, no leading slash, no `..` or `.` segments, no backslashes, no query or fragment.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!.*(^|/)\\.{1,2}(/|$))(?!/)[A-Za-z0-9._~/-]+$"
+    },
+    "gainDb": {
+      "description": "Gain offset in dB. Bounded to keep playback safe.",
+      "type": "number",
+      "minimum": -60,
+      "maximum": 12
+    },
+    "category": {
+      "enum": ["kick", "snare", "hat", "cymbal", "tom", "clap", "rim", "percussion", "fx", "unknown"]
+    },
+    "icon": {
+      "enum": ["kick", "snare", "hat-closed", "hat-open", "cymbal", "tom", "clap", "rim", "percussion"]
+    },
+    "machineKind": {
+      "enum": ["drum-machine", "keyboard", "synth", "module", "sampler", "unknown"]
+    },
+    "identityStatus": {
+      "enum": ["provisional", "verified", "unresolved"]
+    }
+  }
+}

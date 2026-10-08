@@ -1,0 +1,39 @@
+# Drums production stack (vpsau3) and local stack (OrbStack).
+#
+#   media   nginx: app shell + catalog/ + media/ from DRUMS_DATA (read-only)
+#   tunnel  cloudflared connector for media.re20.one (profile "tunnel", prod only)
+#
+# Local:  docker compose -f deploy/compose.yml up -d --build   → http://localhost:8080
+#         (serves ./release; build it with: npm run catalog:build -- --mode full --production)
+# Server: deploy/remote-deploy.sh runs this with --env-file /opt/drums/server.env,
+#         which sets DRUMS_DATA, COMPOSE_PROFILES=tunnel and TUNNEL_TOKEN.
+name: drums
+
+services:
+  media:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: drums-media:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    volumes:
+      - ${DRUMS_DATA:-../release}:/srv/data:ro
+    ports:
+      # Loopback only; public traffic arrives through the tunnel.
+      - "127.0.0.1:${DRUMS_PORT:-8080}:8080"
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      media:
+        condition: service_healthy

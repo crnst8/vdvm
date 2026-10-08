@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "machine.schema.json",
+  "title": "Machine",
+  "type": "object",
+  "required": [
+    "id",
+    "manufacturer",
+    "model",
+    "displayName",
+    "aliases",
+    "kind",
+    "identityStatus",
+    "logo",
+    "photo",
+    "history"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "defs.schema.json#/$defs/id"
+    },
+    "manufacturer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "kind": {
+      "$ref": "defs.schema.json#/$defs/machineKind"
+    },
+    "identityStatus": {
+      "$ref": "defs.schema.json#/$defs/identityStatus"
+    },
+    "logo": {
+      "oneOf": [
+        {
+          "$ref": "asset-ref.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "photo": {
+      "oneOf": [
+        {
+          "$ref": "asset-ref.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "history": {
+      "description": "Short sourced history of the machine (50-100 words, plain prose), shown in machine details and as a preview in the library. Null until written and reviewed. Evidence stays in catalog/research/history/.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "text",
+            "sources"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 900
+            },
+            "sources": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "url"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "url": {
+                    "type": "string",
+                    "pattern": "^https?://"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

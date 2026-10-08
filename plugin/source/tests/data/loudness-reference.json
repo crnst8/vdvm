@@ -1,0 +1,242 @@
+[
+  {
+    "file": "public/media/audio/0000318c21abf6cc02d2a116a26e0c77fe6f7f12323d63c8f89a7e4ecf7a692c.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -18.71205629391031,
+    "peakDb": -0.04811108695585631,
+    "normalisationDb": -1.2879437060896883
+  },
+  {
+    "file": "public/media/audio/0afe87e069b78e2baeb283b9ff927b91eff44c5d1b62d80e0b51632734517100.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -16.935165832304968,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -3.0648341676950324
+  },
+  {
+    "file": "public/media/audio/15c2d61327a7ef56aec8085617592eb173e05c7bcf394cb63d65c3122fa2230d.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -12.316894765066596,
+    "peakDb": -0.17132487661622844,
+    "normalisationDb": -7.683105234933404
+  },
+  {
+    "file": "public/media/audio/20e74148842fe13e05c8fb54f3ce3685da9bde93e66e88e346322f0f8c4a68e1.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -15.080006858521832,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -4.919993141478168
+  },
+  {
+    "file": "public/media/audio/2b8e6416edb2eec25e8cc333663e7affffbd10005ca26d5ccd54521d530e9e46.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 24,
+    "format": "pcm",
+    "lufs": -18.910822349415085,
+    "peakDb": -0.0000010354387945871882,
+    "normalisationDb": -1.0891776505849151
+  },
+  {
+    "file": "public/media/audio/35b7eeee5237d6123e7d123afcf326cedcc0b835aa23a22ee9a0823e921f348a.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -15.79704384852668,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -4.20295615147332
+  },
+  {
+    "file": "public/media/audio/40c805d0a4f874e09e0d5fa812721eba313e86489728b31412f18c5deae2cd9a.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -15.209132351287053,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -4.790867648712947
+  },
+  {
+    "file": "public/media/audio/4b67f2c091ab5d355c36fcbb39be063f1cee80e364ebd36d7795684263a5ec9c.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -18.288146027299323,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -1.711853972700677
+  },
+  {
+    "file": "public/media/audio/56220ade9f362888315afcbda33ad7b621cb7300aa4e7e4d10c27d43894f1bcd.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -16.061340351194907,
+    "peakDb": 0,
+    "normalisationDb": -3.9386596488050927
+  },
+  {
+    "file": "public/media/audio/609c8a1d58db6d156fb01fc119923b03cb620aeb19ab37ff23b7a7f63a9e0526.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -25.925304877298082,
+    "peakDb": -15.484390478684944,
+    "normalisationDb": 5.925304877298082
+  },
+  {
+    "file": "public/media/audio/6ad999f78523c6f2872a095f96212f6fc113b729b15e7ca5dc973ea2f51734c0.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -12.32170439105216,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -7.67829560894784
+  },
+  {
+    "file": "public/media/audio/74e376636f1030910f3a6c9202eb5f278bdd8b21f3d717c31ec08bc67aa61e00.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -15.464910552023147,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -4.535089447976853
+  },
+  {
+    "file": "public/media/audio/7f9cf974010b7cb4e2efad9642c84ad02d9bb53064ada01401d6dce56448a7f0.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -13.286340230623447,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -6.713659769376553
+  },
+  {
+    "file": "public/media/audio/8a683857200999610c1919b6e37d76eb02c3e9295658bdaf1b4ade39535f3d50.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -13.834054925844642,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -6.165945074155358
+  },
+  {
+    "file": "public/media/audio/94ae8c52a37e8c33ef7b9844b589ddfc8f3372a00148564efea3a0fb9cbade4a.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -9.206040804975549,
+    "peakDb": -0.01990320978594535,
+    "normalisationDb": -10.793959195024451
+  },
+  {
+    "file": "public/media/audio/9faad1b609d3e18e89757f7de5ceadc5c122935138d88dcbdc8b8094d52e8a42.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -11.365667875503071,
+    "peakDb": 0,
+    "normalisationDb": -8.634332124496929
+  },
+  {
+    "file": "public/media/audio/aa20e30dbcd68e1f22dc503b05fc6afb6965b19224392aa7fd7299f11d472a4b.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -9.850867967605934,
+    "peakDb": 0,
+    "normalisationDb": -10.149132032394066
+  },
+  {
+    "file": "public/media/audio/b505df198f98704a9352e4d0a5d8c41eaea0eedcc36891d6fb85b93c19fe0771.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 24,
+    "format": "pcm",
+    "lufs": -17.725192599250484,
+    "peakDb": 0,
+    "normalisationDb": -2.2748074007495163
+  },
+  {
+    "file": "public/media/audio/bf342235597a98920f3f7f51ff1b04152a71d744d6b29ea93768cbdea3e98e58.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -19.73401737035333,
+    "peakDb": -7.851580241905648,
+    "normalisationDb": -0.2659826296466683
+  },
+  {
+    "file": "public/media/audio/c9ed479b1d1c028372cf5532af11b761384e9438d93cffa1f57489775ca999ac.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -9.040697233018683,
+    "peakDb": -0.00026507636037961915,
+    "normalisationDb": -10.959302766981317
+  },
+  {
+    "file": "public/media/audio/d424a46240b42619c3bbc856dfefab586e72218b15510e373e0fd72b12d830aa.wav",
+    "channels": 1,
+    "sampleRate": 44100,
+    "bitsPerSample": 24,
+    "format": "pcm",
+    "lufs": -14.129463876617441,
+    "peakDb": -3.729312027145073,
+    "normalisationDb": -5.870536123382559
+  },
+  {
+    "file": "public/media/audio/dfccff2fe89560f06d900a4d4699dd74318250248b1da7dd1dd712467ef99a69.wav",
+    "channels": 2,
+    "sampleRate": 48000,
+    "bitsPerSample": 24,
+    "format": "pcm",
+    "lufs": -11.483556525444538,
+    "peakDb": -0.20392121441101166,
+    "normalisationDb": -8.516443474555462
+  },
+  {
+    "file": "public/media/audio/e9dd029defa2e7269207234650d48bb08970c2818b5fbdb30c158c0023944749.wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -16.089698831360785,
+    "peakDb": -6.403739532353128,
+    "normalisationDb": -3.910301168639215
+  },
+  {
+    "file": "public/media/audio/f4aa71df726eaee05ee1ae0839a9a3fd9b6136b06da9b60015a128bea5bfc0ca.wav",
+    "channels": 1,
+    "sampleRate": 48000,
+    "bitsPerSample": 16,
+    "format": "pcm",
+    "lufs": -23.31484711609811,
+    "peakDb": -9.339385749724316,
+    "normalisationDb": 3.314847116098111
+  }
+]

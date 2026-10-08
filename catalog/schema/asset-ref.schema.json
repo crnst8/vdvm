@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "asset-ref.schema.json",
+  "title": "AssetRef",
+  "description": "Runtime reference to a published image. Logos are transparent PNGs. Missing art is null at the use site, never a broken URL.",
+  "type": "object",
+  "required": ["id", "url", "sha256", "width", "height", "alt", "creditId"],
+  "properties": {
+    "id": { "$ref": "defs.schema.json#/$defs/id" },
+    "url": { "$ref": "defs.schema.json#/$defs/relativeUrl" },
+    "sha256": { "$ref": "defs.schema.json#/$defs/sha256" },
+    "width": { "type": "integer", "minimum": 1 },
+    "height": { "type": "integer", "minimum": 1 },
+    "alt": { "type": "string", "minLength": 1 },
+    "creditId": { "$ref": "defs.schema.json#/$defs/id" }
+  }
+}

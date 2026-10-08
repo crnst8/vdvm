@@ -1,0 +1,89 @@
+# Push to main → verify → deploy the app shell to Cloudflare Pages (re20.one)
+# and redeploy the media container on vpsau3 (media.re20.one).
+#
+# Catalog and audio are not in git; deploy/sync.sh uploads them from the
+# machine that holds the sample library. This workflow only ships code.
+#
+# Secrets (repository):
+#   CLOUDFLARE_API_TOKEN   account token, Pages Write only
+#   CLOUDFLARE_ACCOUNT_ID
+#   VPS_SSH_KEY            private key whose authorized_keys entry on vpsau3
+#                          forces /opt/drums/app/deploy/remote-deploy.sh
+#   VPS_KNOWN_HOSTS        ssh-keyscan line(s) for the host
+# Variables (repository): VPS_HOST, VPS_PORT, VPS_USER.
+# deploy/bootstrap.sh sets the key, known hosts and variables.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+
+  pages:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:pages
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: >-
+          npx --yes wrangler@4 pages deploy dist-pages
+          --project-name drums --branch main
+          --commit-hash "$GITHUB_SHA" --commit-message "$(git log -1 --format=%s)"
+
+  server:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy container on vpsau3
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          HOST: ${{ vars.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT }}
+          USER: ${{ vars.VPS_USER }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::VPS_SSH_KEY is not set; run deploy/bootstrap.sh once to enable server deploys"
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The key's forced command runs remote-deploy.sh; "deploy" is its only accepted request here.
+          ssh -i ~/.ssh/deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$USER@$HOST" deploy
+      - name: Check public origin
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://media.re20.one/healthz || true)
+            [ "$code" = 200 ] && { echo "media.re20.one healthy"; exit 0; }
+            sleep 10
+          done
+          echo "::warning::https://media.re20.one/healthz returned $code"

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# V.D.V.M plugin helper. Run from anywhere.
+#   plugin/dev build        frontend bundle + VST3/AU/Standalone (Release)
+#   plugin/dev test         headless core tests (contract, DSP, sequencer, libraries, state)
+#   plugin/dev hosttest     load the built VST3 like a DAW and check rendered audio
+#   plugin/dev pluginval    pluginval at strictness 10 (downloads pluginval once into ~/.cache)
+#   plugin/dev check        build + test + hosttest + pluginval
+#   plugin/dev standalone   run the Standalone app against the curated catalog in public/
+#   plugin/dev install      copy VST3 and AU into ~/Library/Audio/Plug-Ins (macOS)
+#   plugin/dev uninstall    remove them again
+#   plugin/dev package      bundled and unbundled installers (see plugin/package.sh)
+#   plugin/dev release [dir] universal (arm64 + x86_64) build in plugin/build-release, all checks, both installers
+#                           (the bundled one packs the catalog in dir, default public/)
+# JUCE: uses ~/.cache/drums-plugin/juce-8.0.9 when present, otherwise CMake downloads tag 8.0.9.
+set -euo pipefail
+
+here="$(cd "$(dirname "$0")" && pwd)"
+repo="$(cd "$here/.." && pwd)"
+build="$here/build"
+cache="$HOME/.cache/drums-plugin"
+cmake_args=()
+juce_local="$cache/juce-8.0.9"
+artefacts="$build/Drums_artefacts/Release"
+jobs="$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)"
+
+configure() {
+  local args=(-S "$here" -B "$build" -DCMAKE_BUILD_TYPE=Release)
+  [ -d "$juce_local" ] && args+=(-DFETCHCONTENT_SOURCE_DIR_JUCE="$juce_local")
+  cmake "${args[@]}" ${cmake_args[@]+"${cmake_args[@]}"} >/dev/null
+}
+
+ui() { (cd "$repo" && npm run plugin:ui); }
+
+build_all() {
+  ui
+  configure
+  cmake --build "$build" --config Release -j "$jobs" --target Drums_VST3 Drums_AU Drums_Standalone DrumsCoreTests DrumsHostTest
+}
+
+run_tests() {
+  configure
+  cmake --build "$build" --config Release -j "$jobs" --target DrumsCoreTests
+  "$build/DrumsCoreTests_artefacts/Release/DrumsCoreTests" "$@"
+}
+
+# Factory library for tests and the Standalone: VDVM_FACTORY_DIR, else the full
+# catalog in public/ when it is built, else the test kits in public/fixture/.
+factory_dir() {
+  if [ -n "${VDVM_FACTORY_DIR:-}" ]; then echo "$VDVM_FACTORY_DIR"
+  elif [ -f "$repo/public/catalog/index.json" ]; then echo "$repo/public"
+  else
+    [ -f "$repo/public/fixture/catalog/index.json" ] || (cd "$repo" && npm run -s catalog:build -- --mode fixture >&2)
+    echo "$repo/public/fixture"
+  fi
+}
+
+with_test_dirs() {
+  local data factory; data="$(mktemp -d)"; factory="$(factory_dir)"
+  VDVM_DATA_DIR="$data" VDVM_FACTORY_DIR="$factory" "$@"
+  local status=$?
+  rm -rf "$data"
+  return $status
+}
+
+hosttest() {
+  with_test_dirs "$build/DrumsHostTest_artefacts/Release/DrumsHostTest" "$artefacts/VST3/V.D.V.M.vst3"
+}
+
+pluginval() {
+  local pv="$cache/tools/pluginval.app/Contents/MacOS/pluginval"
+  if [ ! -x "$pv" ]; then
+    mkdir -p "$cache/tools"
+    curl -sL -o "$cache/tools/pluginval.zip" https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+    (cd "$cache/tools" && unzip -o -q pluginval.zip)
+  fi
+  with_test_dirs "$pv" --strictness-level 10 --validate-in-process --timeout-ms 600000 "$artefacts/VST3/V.D.V.M.vst3"
+}
+
+case "${1:-}" in
+  build) build_all ;;
+  test) shift; run_tests "$@" ;;
+  hosttest) hosttest ;;
+  pluginval) pluginval ;;
+  check) build_all; run_tests; hosttest; pluginval ;;
+  standalone)
+    VDVM_FACTORY_DIR="$(factory_dir)" "$artefacts/Standalone/V.D.V.M.app/Contents/MacOS/V.D.V.M" ;;
+  install)
+    vst3="$HOME/Library/Audio/Plug-Ins/VST3"; au="$HOME/Library/Audio/Plug-Ins/Components"
+    mkdir -p "$vst3" "$au"
+    # Drums.* are builds from before the product was named V.D.V.M.
+    rm -rf "$vst3/V.D.V.M.vst3" "$au/V.D.V.M.component" "$vst3/Drums.vst3" "$au/Drums.component"
+    cp -R "$artefacts/VST3/V.D.V.M.vst3" "$vst3/"
+    cp -R "$artefacts/AU/V.D.V.M.component" "$au/"
+    killall -9 AudioComponentRegistrar 2>/dev/null || true
+    echo "installed into ~/Library/Audio/Plug-Ins (VST3, Components)" ;;
+  uninstall)
+    rm -rf "$HOME/Library/Audio/Plug-Ins/VST3/V.D.V.M.vst3" "$HOME/Library/Audio/Plug-Ins/Components/V.D.V.M.component" \
+      "$HOME/Library/Audio/Plug-Ins/VST3/Drums.vst3" "$HOME/Library/Audio/Plug-Ins/Components/Drums.component"
+    echo "removed" ;;
+  package) shift; "$here/package.sh" "$@" ;;
+  release)
+    # Separate build tree so the native dev build stays fast.
+    build="$here/build-release"; artefacts="$build/Drums_artefacts/Release"
+    cmake_args=(-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64")
+    build_all; run_tests; hosttest; pluginval
+    for f in "$artefacts/VST3/V.D.V.M.vst3/Contents/MacOS/V.D.V.M" "$artefacts/AU/V.D.V.M.component/Contents/MacOS/V.D.V.M"; do
+      archs="$(lipo -archs "$f")"
+      [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "not universal ($archs): $f"; exit 1; }
+    done
+    VDVM_BUILD_DIR="$build" "$here/package.sh" unbundled
+    VDVM_BUILD_DIR="$build" "$here/package.sh" bundled "${2:-$repo/public}" ;;
+  *) sed -n '2,14p' "$0"; exit 1 ;;
+esac

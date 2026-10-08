@@ -1,0 +1,36 @@
+/* Panel colours, type and spacing measured from the original hardware-panel mockup. */
+:root {
+  --panel: #262525;
+  --recess: #0a0a0a;
+  --key-face: #e4dfcd;
+  --key-face-hi: #eee9d9;
+  --key-flat: #d2caac;
+  --bevel-shadow: #a9a58a;
+  --bevel-mid: #c4bd9f;
+  --divider: #ff5200;
+  --library-icon: #b8936f;
+  --bookmark: #738b57;
+  --step-led: #ff0000;
+  --step-led-off: #5a1410;
+  --playhead: #ffc400;
+  --display-lit: #ff173b;
+  --display-ghost: #530000;
+  --ink: #2b2820;
+  --ink-muted: #6b6450;
+  --text: #ece7d6;
+  --text-muted: #a39d8a;
+  --outside: #151414;
+  --focus: #ffc400;
+  /* Phone header strip, its hairlines and the V.D.V.M mark (after the 2026-10-02 phone mockup). */
+  --band: #1f242e;
+  --line: #b04428;
+  --rule: color-mix(in srgb, var(--divider) 55%, transparent);
+  --clear: #fb2c3b;
+  /* Model name: the silver of the maker plates. */
+  --model: #c7c2c2;
+
+  --gutter: 16px;
+  --step-gap: 12px;
+  --panel-max: 480px;
+  color-scheme: dark;
+}

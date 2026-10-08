@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>V.D.V.M diagnostics</title>
+    <style>
+      body { font: 14px/1.5 ui-monospace, Menlo, monospace; background: #1d1c1c; color: #ece7d6; padding: 16px; }
+      .pass { color: #8fd48f; } .fail { color: #ff8a7a; }
+    </style>
+  </head>
+  <body>
+    <h1>Offline render checks</h1>
+    <p>Dev server only (not part of the production build). Results also land in <code>window.__renderChecks</code>.</p>
+    <button id="run" type="button">Run</button>
+    <pre id="out"></pre>
+    <script type="module" src="/src/diagnostics/render-checks.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sample.schema.json",
+  "title": "Sample",
+  "description": "One playable one-shot. URL is supplied by the producer, never inferred.",
+  "type": "object",
+  "required": ["id", "blobSha256", "url", "bytes", "durationSec", "channels", "sampleRate", "gainDb", "peakDbfs"],
+  "properties": {
+    "id": { "$ref": "defs.schema.json#/$defs/id" },
+    "label": { "type": "string", "minLength": 1, "description": "Optional display label for the variant list." },
+    "blobSha256": { "$ref": "defs.schema.json#/$defs/sha256" },
+    "url": { "$ref": "defs.schema.json#/$defs/relativeUrl" },
+    "bytes": { "type": "integer", "exclusiveMinimum": 0 },
+    "durationSec": { "type": "number", "exclusiveMinimum": 0, "maximum": 60 },
+    "channels": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "sampleRate": { "type": "integer", "minimum": 8000, "maximum": 192000 },
+    "gainDb": { "$ref": "defs.schema.json#/$defs/gainDb" },
+    "peakDbfs": { "oneOf": [{ "type": "number", "maximum": 0 }, { "type": "null" }] }
+  }
+}

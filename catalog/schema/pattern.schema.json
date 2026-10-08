@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pattern.schema.json",
+  "title": "Pattern",
+  "description": "A saved one-bar pattern of 16 steps; playback may loop the first 8. Missing sounds remain recoverable; never silently replace a removed variant. Optional fields default as documented so older saved patterns stay valid.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "kitId",
+    "kitRevision",
+    "bpm",
+    "tracks",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "description": "Internal UUID, never the editable name.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "kitId": {
+      "$ref": "defs.schema.json#/$defs/id"
+    },
+    "kitRevision": {
+      "$ref": "defs.schema.json#/$defs/revision"
+    },
+    "bpm": {
+      "type": "integer",
+      "minimum": 40,
+      "maximum": 240
+    },
+    "swing": {
+      "description": "Playback swing: first note's percentage of a pair, 50 is straight. Default 50. App groove control, not a hardware preset emulation.",
+      "type": "integer",
+      "minimum": 50,
+      "maximum": 75
+    },
+    "swingGrid": {
+      "description": "Swing note division. Default 16. Eighth-note swing delays steps 3-4 of each four-step group; sixteenth-note swing delays every second step.",
+      "enum": [
+        8,
+        16
+      ]
+    },
+    "circuit": {
+      "description": "Apply the current machine's documented hardware timing (swing tick positions, measured step jitter) when the app has data for it. Default false.",
+      "type": "boolean"
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/track"
+      }
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "ISO 8601 UTC timestamp.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "length": {
+      "description": "Loop length in steps. Default 16. With 8, steps 9-16 are kept but not played.",
+      "enum": [
+        8,
+        16
+      ]
+    },
+    "pitchCents": {
+      "description": "Overall sample tuning in integer cents for every instrument in this pattern (100 cents = 1 semitone). Raised pitch shortens the sample. Default 0. Adds to each track's per-step offsets.",
+      "type": "integer",
+      "minimum": -1200,
+      "maximum": 1200
+    }
+  },
+  "$defs": {
+    "track": {
+      "type": "object",
+      "required": [
+        "slotId",
+        "sampleId",
+        "steps"
+      ],
+      "properties": {
+        "slotId": {
+          "$ref": "defs.schema.json#/$defs/id"
+        },
+        "sampleId": {
+          "$ref": "defs.schema.json#/$defs/id"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "gainDb": {
+          "description": "Drum volume offset in dB applied to every hit of this track. Default 0.",
+          "$ref": "defs.schema.json#/$defs/gainDb"
+        },
+        "levels": {
+          "description": "Per-step level, 0 (silent) to 1 (full). Amplitude = level squared. Default all 1.",
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "stepPitchCents": {
+          "description": "Per-step pitch offsets in integer cents added to the pattern's overall pitch (100 cents = 1 semitone). Exactly 16 entries; default all 0. Offsets survive a step being off and remain editable outside the 8-step loop.",
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": {
+            "type": "integer",
+            "minimum": -1200,
+            "maximum": 1200
+          }
+        }
+      }
+    }
+  }
+}

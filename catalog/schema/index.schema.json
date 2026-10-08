@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "index.schema.json",
+  "title": "CatalogIndex",
+  "description": "Small searchable index. Served with revalidation at catalog/index.json. No full sample inventory.",
+  "type": "object",
+  "required": ["schemaVersion", "revision", "machines", "kits", "redirects", "creditsUrl"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "revision": { "$ref": "defs.schema.json#/$defs/revision" },
+    "machines": { "type": "array", "items": { "$ref": "machine.schema.json" } },
+    "kits": { "type": "array", "items": { "$ref": "#/$defs/kitEntry" } },
+    "redirects": {
+      "type": "object",
+      "required": ["machines", "kits", "samples"],
+      "properties": {
+        "machines": { "$ref": "#/$defs/redirectMap" },
+        "kits": { "$ref": "#/$defs/redirectMap" },
+        "samples": { "$ref": "#/$defs/redirectMap" }
+      }
+    },
+    "creditsUrl": { "$ref": "defs.schema.json#/$defs/relativeUrl" }
+  },
+  "$defs": {
+    "kitEntry": {
+      "type": "object",
+      "required": ["id", "machineId", "label", "revision", "url"],
+      "properties": {
+        "id": { "$ref": "defs.schema.json#/$defs/id" },
+        "machineId": { "$ref": "defs.schema.json#/$defs/id" },
+        "label": { "type": "string", "minLength": 1 },
+        "revision": { "$ref": "defs.schema.json#/$defs/revision" },
+        "url": { "$ref": "defs.schema.json#/$defs/relativeUrl" }
+      }
+    },
+    "redirectMap": {
+      "description": "Old ID -> current ID. Graph must be acyclic.",
+      "type": "object",
+      "propertyNames": { "$ref": "defs.schema.json#/$defs/id" },
+      "additionalProperties": { "$ref": "defs.schema.json#/$defs/id" }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+# Only git-tracked sources go into the image build.
+.git
+node_modules
+dist
+public
+release
+samples
+mock
+logos
+assets
+catalog
+docs
+.vitest
+.claude
+**/__pycache__
+**/.DS_Store
+deploy/data

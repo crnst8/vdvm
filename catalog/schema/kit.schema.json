@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kit.schema.json",
+  "title": "KitManifest",
+  "description": "One sample collection/preset. Served immutably at kits/<id>/<revision>.json.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "machineId", "label", "revision", "slots", "samples"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "defs.schema.json#/$defs/id" },
+    "machineId": { "$ref": "defs.schema.json#/$defs/id" },
+    "label": { "type": "string", "minLength": 1 },
+    "revision": { "$ref": "defs.schema.json#/$defs/revision" },
+    "slots": { "type": "array", "minItems": 1, "items": { "$ref": "slot.schema.json" } },
+    "samples": { "type": "array", "minItems": 1, "items": { "$ref": "sample.schema.json" } }
+  }
+}
