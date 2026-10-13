@@ -4,7 +4,7 @@ import { useArtwork } from './useArtwork'
 import { BooksIcon, BrandRings, ChevronIcon, StarIcon, TriangleIcon } from './icons'
 import { Art } from './Art'
 import { APP_VERSION } from '../version'
-import { CircuitKey, type CircuitProps } from './Groove'
+import { CircuitKey, RhythmKey, type CircuitProps } from './Groove'
 import { useHold } from './hooks'
 
 /** Kit load state for the line under the maker logo; null when the shown kit is loaded and active. */
@@ -24,9 +24,9 @@ export function LogoBay(props: {
   onOpenKits: () => void
   /** Phones: the variant key cycles to the next kit; hold, right-click or V opens the named list. */
   onCycleKit: () => void
-  /** Phones: groove key under the logo opens the groove sheet. */
+  /** Phones: the rhythm key under the logo opens the rhythm sheet. */
   swing: number
-  onOpenGroove: () => void
+  onOpenRhythm: () => void
   circuit?: CircuitProps
   favourite: boolean
   onToggleFavourite: () => void
@@ -167,21 +167,10 @@ export function LogoBay(props: {
           const at = Math.max(0, props.kits.findIndex((k) => k.id === (props.loadingKitId ?? props.activeKitId)))
           const current = props.kits[at]
           const many = props.kits.length > 1
-          const straight = props.swing <= 50
           return (<>
-            <span className="bay__cap bay__cap--groove" aria-hidden="true">Groove</span>
+            <span className="bay__cap bay__cap--groove" aria-hidden="true">Rhythm</span>
             <div className="kitrow kitrow--phone">
-              <button
-                type="button"
-                id="groove-button"
-                className={`tkey groovekey${straight ? '' : ' groovekey--on'}`}
-                aria-haspopup="dialog"
-                aria-label={`Groove: ${straight ? 'straight' : `${props.swing}% swing`}. Open groove`}
-                onClick={props.onOpenGroove}
-              >
-                <span className="tkey__caption">GROOVE</span>
-                <span className="groovekey__value">{straight ? 'STR' : `${props.swing}%`}</span>
-              </button>
+              <RhythmKey swing={props.swing} onOpen={props.onOpenRhythm} className="groovekey" />
               <button
                 type="button"
                 id="kits-button"

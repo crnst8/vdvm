@@ -3,13 +3,32 @@
 *::after {
   box-sizing: border-box;
 }
+/* App height. iOS 26 sizes 100dvh (and 100%) in an installed web app one status bar short of the
+   screen, leaving a blank band at the bottom; 100lvh is the full screen there. Where the web view
+   starts below an opaque status bar instead, 100lvh overshoots and 100dvh plus the (zero) top
+   inset is right, so the smaller of the two fits both. */
+:root {
+  --app-h: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --app-h: 100dvh;
+  }
+}
+@supports (-webkit-touch-callout: none) and (height: 100lvh) {
+  @media (display-mode: standalone) {
+    :root {
+      --app-h: min(100lvh, calc(100dvh + env(safe-area-inset-top, 0px)));
+    }
+  }
+}
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--outside);
 }
 body {
   margin: 0;
-  min-height: 100dvh;
+  min-height: var(--app-h);
   background: var(--outside);
   color: var(--text);
   font: 15px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -28,13 +47,12 @@ button {
 /* The panel always fits the window: fixed height, the step keys take the space that is left. */
 html,
 body {
-  height: 100%;
+  height: var(--app-h);
   overflow: hidden;
 }
 .panel {
   max-width: var(--panel-max);
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-h);
   margin: 0 auto;
   overflow: hidden;
   background: var(--panel);
@@ -49,8 +67,7 @@ body {
 }
 @media (min-width: 520px) {
   .panel {
-    height: calc(100vh - 48px);
-    height: calc(100dvh - 48px);
+    height: calc(var(--app-h) - 48px);
     margin: 24px auto;
     border-radius: 28px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -722,7 +739,7 @@ body {
   text-transform: uppercase;
   text-wrap: balance;
 }
-/* Links go here once there are any (ABOUT.links in About.tsx). */
+/* ABOUT.links in About.tsx. */
 .about__links {
   display: flex;
   flex-wrap: wrap;
@@ -3183,8 +3200,7 @@ body {
 @media (max-width: 999.98px) and (max-height: 520px) and (orientation: landscape) {
   .panel {
     max-width: 960px;
-    height: 100vh;
-    height: 100dvh;
+    height: var(--app-h);
     margin: 0 auto;
     border-radius: 0;
     display: grid;
@@ -3304,15 +3320,20 @@ body {
 .kitrow--phone .tkey {
   flex-shrink: 0;
 }
-.groovekey__value {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
+/* Rhythm key (phone row and desktop Groove): note icon with the swing LED at its left. */
+.rhythmkey__face {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
-.groovekey--on .groovekey__value {
-  color: var(--ink);
+.rhythmkey__icon {
+  width: 22px;
+  height: 22px;
+  color: #3a372e;
+}
+.kitrow--phone .rhythmkey__icon {
+  width: 20px;
+  height: 20px;
 }
 .varkey {
   width: var(--rowkey-h);
@@ -3411,6 +3432,65 @@ body {
   font-size: 13px;
   text-align: center;
 }
+/* Presets: a caption rule with the undo key, then one key grid per machine. */
+.presets__rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 2px;
+}
+.presets__rule::after {
+  content: '';
+  order: 1;
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.presets__cap,
+.presets__machine {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.sheet .presets__undo {
+  order: 2;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--key-flat);
+  color: var(--ink);
+}
+.presets__undo svg {
+  width: 22px;
+  height: 22px;
+}
+.presets {
+  padding: 12px 0 4px;
+}
+.presetgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+}
+.sheet .presetkey {
+  min-height: 48px;
+  padding: 6px 7px;
+  gap: 6px;
+  font-size: 12.5px;
+}
+@media (min-width: 600px) {
+  .presetgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 @media (max-width: 379.98px) {
   .logobay {
     --rowkey-w: 68px;
@@ -3442,14 +3522,15 @@ body {
     /* Space around the key field; the side hatching fills it. */
     --side: max(64px, calc((100vw - 1240px) / 2));
     max-width: none;
-    height: 100vh;
-    height: 100dvh;
+    height: var(--app-h);
     margin: 0;
     padding: 0;
     border-radius: 0;
     box-shadow: none;
     display: grid;
-    grid-template-columns: 56px minmax(min-content, 1fr) minmax(min-content, 1fr) minmax(min-content, 1.15fr);
+    /* The rhythm cell (a size container) grows to fit its inline swing keys before the other
+       cells take the remaining width; 560 px holds RHYTHM, swing, GRID and CIRCUIT. */
+    grid-template-columns: 56px minmax(220px, 560px) minmax(min-content, 1fr) minmax(min-content, 1.15fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
       'machine machine machine machine'
@@ -3864,7 +3945,10 @@ body {
     text-transform: uppercase;
   }
 
+  /* A size container: when the inline swing and grid keys do not fit beside RHYTHM (and CIRCUIT),
+     they are left to the rhythm sheet instead of widening the panel. */
   .desktop-groove {
+    container: groove / inline-size;
     grid-area: groove;
     display: flex;
     align-items: center;
@@ -3877,6 +3961,45 @@ body {
     display: flex;
     align-items: center;
     gap: 14px;
+  }
+  /* Full size needs 404 px (486 px with CIRCUIT); compact keys need 332 px (400 px). */
+  @container groove (width < 404px) {
+    .groove-controls {
+      gap: 8px;
+    }
+    .groove-controls .groove-swing {
+      grid-template-columns: 44px 96px 44px;
+      gap: 6px;
+    }
+    .groove-controls .tkey--square {
+      width: 60px;
+      flex-basis: 60px;
+    }
+  }
+  @container groove (width < 486px) {
+    .groove-controls:has(.circuitkey) {
+      gap: 8px;
+    }
+    .groove-controls:has(.circuitkey) .groove-swing {
+      grid-template-columns: 44px 96px 44px;
+      gap: 6px;
+    }
+    .groove-controls:has(.circuitkey) .tkey--square {
+      width: 60px;
+      flex-basis: 60px;
+    }
+  }
+  @container groove (width < 332px) {
+    .groove-controls .groove-swing,
+    .groove-controls .groove-grid {
+      display: none;
+    }
+  }
+  @container groove (width < 400px) {
+    .groove-controls:has(.circuitkey) .groove-swing,
+    .groove-controls:has(.circuitkey) .groove-grid {
+      display: none;
+    }
   }
   .groove-swing {
     grid-template-columns: 52px 118px 52px;

@@ -183,6 +183,14 @@ export const UndoIcon = (p: P) => (
   </svg>
 )
 
+/** Eighth note: the rhythm key. */
+export const NoteIcon = (p: P) => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" focusable="false" {...p}>
+    <ellipse cx="11.5" cy="24" rx="5" ry="3.7" transform="rotate(-22 11.5 24)" fill="currentColor" />
+    <path d="M15.8 22.6V4.5c.6 3.4 3.2 5 5.6 6.8 2.3 1.7 3.6 3.8 3.1 7.2" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
 export const TriangleIcon =({ dir, ...p }: P & { dir: 'left' | 'right' }) => (
   <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false" {...p}>
     <path d={dir === 'left' ? 'M12 2.5v11L3 8z' : 'M4 2.5v11L13 8z'} fill="currentColor" />

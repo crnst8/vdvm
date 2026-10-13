@@ -67,6 +67,24 @@ export type PatternAction =
   | { type: 'setLength'; length: LoopLength }
   | { type: 'markSaved' }
   | { type: 'clear' }
+  | { type: 'setRhythm'; rhythm: Rhythm }
+
+/** Steps, levels and feel of a whole pattern: a preset rhythm, or a snapshot to restore. */
+export interface Rhythm {
+  /** Tracks not listed get no steps and keep their levels. */
+  tracks: Record<string, { steps: boolean[]; levels: number[] }>
+  swing: number
+  swingGrid: 8 | 16
+  length: LoopLength
+}
+
+/** The pattern's current rhythm, for restoring after `setRhythm`. */
+export const rhythmOf = (s: PatternState): Rhythm => ({
+  tracks: Object.fromEntries(Object.entries(s.tracks).map(([id, t]) => [id, { steps: t.steps, levels: t.levels }])),
+  swing: s.swing,
+  swingGrid: s.swingGrid,
+  length: s.length,
+})
 
 export const clampBpm = (bpm: number) =>
   Number.isFinite(bpm) ? Math.min(BPM_MAX, Math.max(BPM_MIN, Math.round(bpm))) : BPM_DEFAULT
@@ -214,6 +232,16 @@ export function patternReducer(state: PatternState, action: PatternAction): Patt
       const tracks: Record<string, TrackState> = {}
       for (const [k, t] of Object.entries(state.tracks)) tracks[k] = { ...t, steps: emptySteps() }
       return edited({ ...state, tracks })
+    }
+    case 'setRhythm': {
+      const { rhythm } = action
+      const tracks: Record<string, TrackState> = {}
+      for (const [k, t] of Object.entries(state.tracks)) {
+        const r = rhythm.tracks[k]
+        tracks[k] = r ? { ...t, steps: r.steps.slice(), levels: r.levels.map(clampLevel) } : { ...t, steps: emptySteps() }
+      }
+      const swing = Math.min(75, Math.max(50, Math.round(rhythm.swing)))
+      return edited({ ...state, tracks, swing, swingGrid: rhythm.swingGrid, length: rhythm.length })
     }
   }
 }

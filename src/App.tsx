@@ -6,8 +6,8 @@ import { Catalog, kitsOf, neighbourMachine, preferredKit, shortKitLabels } from 
 import { newId } from './data/patterns'
 import { makeBackup, parseBackup, patternsToImport } from './data/backup'
 import {
-  bindKitState, fromPattern, isSaved, newPatternState, PAGE_SIZE, patternReducer, toPattern,
-  type PatternAction, type PatternState,
+  bindKitState, fromPattern, isSaved, newPatternState, PAGE_SIZE, patternReducer, rhythmOf, toPattern,
+  type PatternAction, type PatternState, type Rhythm,
 } from './state/pattern'
 import { demoPattern } from './state/demo'
 import { Header } from './ui/Header'
@@ -25,7 +25,8 @@ import { TempoSheet } from './ui/TempoSheet'
 import { About } from './ui/About'
 import { KitSheet } from './ui/KitSheet'
 import { DesktopMixer, type MixerMode } from './ui/DesktopMixer'
-import { Groove, GrooveSheet, type CircuitProps } from './ui/Groove'
+import { Groove, RhythmSheet, type CircuitProps } from './ui/Groove'
+import { PRESET_MACHINES, presetRhythm, type RhythmPreset } from './data/presets'
 import { circuitFor } from './data/timing'
 import { machineSwing } from './audio/circuit'
 import { SourcesTab } from './ui/library/SourcesTab'
@@ -96,7 +97,10 @@ export function App() {
   const [detailsTrail, setDetailsTrail] = useState<string[]>([])
   const [tempoOpen, setTempoOpen] = useState(false)
   const [kitsOpen, setKitsOpen] = useState(false)
-  const [grooveOpen, setGrooveOpen] = useState(false)
+  const [rhythmOpen, setRhythmOpen] = useState(false)
+  /** The preset rhythm last applied and the pattern's rhythm before the first preset of the run;
+   *  undoable until the next edit. */
+  const [presetRun, setPresetRun] = useState<{ id: string; edits: number; presetId: string; before: Rhythm } | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(false)
   /** Steps as they were before the header bin cleared them; undoable until the next edit or timeout. */
@@ -565,6 +569,20 @@ export function App() {
     // 'clear' counts as one edit; any later edit retires the undo.
     setCleared({ id: p.id, edits: p.edits + 1, steps })
   }
+  const presetLive = !!presetRun && !!pattern && pattern.id === presetRun.id && pattern.edits === presetRun.edits
+  const applyPreset = (preset: RhythmPreset) => {
+    const p = patternRef.current
+    if (!p || !kit) return
+    // Trying several presets in a row keeps the original pattern for undo.
+    const before = presetLive && presetRun ? presetRun.before : rhythmOf(p)
+    dispatch({ type: 'setRhythm', rhythm: presetRhythm(preset, kit.slots.map((sl) => sl.id), p.swingGrid) })
+    setPresetRun({ id: p.id, edits: p.edits + 1, presetId: preset.id, before })
+  }
+  const undoPreset = () => {
+    if (!presetRun) return
+    dispatch({ type: 'setRhythm', rhythm: presetRun.before })
+    setPresetRun(null)
+  }
   const clearUndoable = !!cleared && !!pattern && pattern.id === cleared.id && pattern.edits === cleared.edits
   const undoClear = () => {
     const p = patternRef.current
@@ -860,7 +878,7 @@ export function App() {
         onOpenKits={() => setKitsOpen(true)}
         onCycleKit={cycleKit}
         swing={pattern?.swing ?? 50}
-        onOpenGroove={() => setGrooveOpen(true)}
+        onOpenRhythm={() => setRhythmOpen(true)}
         circuit={circuit}
         favourite={!!machine && favourites.has(machine.id)}
         onToggleFavourite={() => machine && prefs.toggleFavourite(machine.id)}
@@ -946,6 +964,7 @@ export function App() {
           onSwing={(swing) => dispatch({ type: 'setSwing', swing })}
           onGrid={(grid) => dispatch({ type: 'setSwingGrid', grid })}
           circuit={circuit}
+          onOpenRhythm={() => setRhythmOpen(true)}
         />}
       </>}
       <TransportBar
@@ -1158,13 +1177,17 @@ export function App() {
         progress={snap.progress}
         onSelectKit={(id) => void switchKit(id)}
       />
-      <GrooveSheet
-        open={grooveOpen && !desktop}
-        onClose={() => setGrooveOpen(false)}
+      <RhythmSheet
+        open={rhythmOpen}
+        onClose={() => setRhythmOpen(false)}
         swing={pattern?.swing ?? 50}
         grid={pattern?.swingGrid ?? 16}
         onSwing={(swing) => dispatch({ type: 'setSwing', swing })}
         onGrid={(grid) => dispatch({ type: 'setSwingGrid', grid })}
+        machines={PRESET_MACHINES}
+        activePresetId={presetLive && presetRun ? presetRun.presetId : null}
+        onPreset={applyPreset}
+        onUndo={presetLive ? undoPreset : null}
       />
       <TempoSheet
         open={tempoOpen}

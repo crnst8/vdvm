@@ -15,8 +15,11 @@ const ABOUT: {
 } = {
   mark: 'V . D . V . M',
   title: 'Vintage Drum Virtual Machine',
-  note: '(I’ll put more info / source code link here soon!)',
-  links: [],
+  note: null,
+  links: [
+    { label: 'Source code', href: 'https://github.com/crnst8/vdvm' },
+    { label: 'Plugin (VST)', href: 'https://vdvm.crnst8.com' },
+  ],
 }
 
 /** Card width: 25 px clear of each screen edge on phones, capped for wide screens. */
