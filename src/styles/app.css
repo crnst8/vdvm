@@ -1505,6 +1505,241 @@ body {
   letter-spacing: 0.08em;
 }
 
+/* ---- Tape echo --------------------------------------------------------------- */
+.pitch-row {
+  gap: 10px;
+}
+/* Fixed value width: OFF, ON and M1-M12 never move the key's label. */
+.echo-key__value {
+  min-width: 3ch;
+  text-align: center;
+}
+.echo-key:not(.echo-key--on) .echo-key__value {
+  color: var(--text-muted);
+}
+
+.sheet--echo {
+  width: min(100%, 520px);
+}
+.sheet--echo .sheet__close {
+  min-width: 64px;
+  background: var(--key-flat);
+  color: var(--ink);
+  border: 0;
+  border-bottom: 3px solid var(--bevel-shadow);
+  font-weight: 600;
+}
+.sheet--echo :is(.knob__dial, button, input):focus-visible {
+  outline: 2px solid var(--playhead);
+  outline-offset: 2px;
+}
+.echo__mode {
+  display: grid;
+  grid-template-columns: 72px 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  padding-top: 14px;
+}
+.sheet .echo__power {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 60px;
+  font: 600 13px/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--ink);
+}
+.echo__readout,
+.echo__sync-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--recess);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.sheet--echo .readout__cap {
+  display: block;
+  color: #8d2a2a;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.echo__mode-num,
+.echo__sync-text {
+  color: var(--display-lit);
+  font: 600 24px/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.echo__heads {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.sheet .echo__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 60px;
+  color: var(--ink);
+}
+.sheet--echo .tkey.tkey--latched {
+  border-color: #9b957a #e4dece #ebe5d2 #aaa386;
+  background: var(--key-flat);
+}
+.echo__key-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.sheet .echo__tape-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sheet .echo__head .tkey__label--big {
+  font-size: 18px;
+}
+.echo__spring-icon {
+  display: grid;
+  height: 21px;
+  place-items: center;
+}
+.echo__knobs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 6px;
+  padding: 18px 0 6px;
+}
+.eknob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.eknob__cap {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.knob__dial.eknob__dial {
+  width: 62px;
+  height: 62px;
+}
+.eknob__dial .knob__pointer::before {
+  top: 6px;
+}
+.eknob__value {
+  min-height: 15px;
+  font: 600 13px/1.15 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--display-lit);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.eknob--dim .eknob__dial,
+.eknob--dim .eknob__value {
+  opacity: 0.45;
+}
+.echo__tape {
+  justify-content: flex-start;
+  gap: 5px;
+}
+.sheet .echo__tape-key {
+  width: min(100%, 72px);
+  height: 26px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.echo__sync {
+  display: grid;
+  grid-template-columns: 52px minmax(96px, 128px) 52px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding-top: 12px;
+}
+.sheet .echo__sync .tkey--arrow {
+  height: 60px;
+}
+.echo__sync-value--out .echo__sync-text {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.echo__sync-ms {
+  font: 600 14px/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.echo__sends {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.echo__send {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr) 4.5ch;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+}
+.echo__send-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.echo__send-label svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.echo__send-value {
+  font: 600 13px/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  text-align: right;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 400px) {
+  .echo__mode {
+    grid-template-columns: 1fr 1fr;
+  }
+  .echo__heads {
+    grid-column: 1 / -1;
+  }
+  .echo__knobs {
+    gap: 14px 2px;
+  }
+  .knob__dial.eknob__dial {
+    width: 54px;
+    height: 54px;
+  }
+  .echo__sync {
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+  }
+  .echo__sync-ms {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+}
+
 .sheet--pitch {
   width: min(100%, 480px);
 }
@@ -3844,7 +4079,7 @@ body {
   }
 
   /* ---- Hits ---------------------------------------------------------------------- */
-  /* PITCH sits at the right end of the hits row. The strip keeps the same room free on both
+  /* ECHO sits at the left end and PITCH at the right end of the hits row. The strip keeps the same room free on both
      sides, so tiles stay centred under the steps and the strip's measured capacity excludes the key. */
   .panel {
     --pitch-room: 96px;
@@ -3858,13 +4093,19 @@ body {
   .strip > .bay__cap {
     top: 0;
   }
+  /* ECHO at the left end and PITCH at the right end of the hits row; the row lets clicks through to the tiles. */
   .pitch-row {
     grid-area: hits;
-    justify-self: end;
+    justify-self: stretch;
+    justify-content: space-between;
     align-self: center;
     z-index: 1;
     margin-top: 4px;
-    padding: 0 var(--side) 0 0;
+    padding: 0 var(--side);
+    pointer-events: none;
+  }
+  .pitch-row > * {
+    pointer-events: auto;
   }
   .pitch-key {
     width: calc(var(--pitch-room) - 12px);

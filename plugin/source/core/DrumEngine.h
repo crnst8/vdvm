@@ -30,6 +30,7 @@ struct Hit
     juce::int64 when = 0;  // absolute frame
     double gainDb = 0;     // normalisation + mixer (master applied by the engine)
     double pitchCents = 0;
+    double send = 0;       // linear send into the echo, after the hit's gain
     HatRole hat = HatRole::none;
     uint32_t kitTag = 0;
     int slotIndex = -1;
@@ -56,6 +57,13 @@ public:
 
     /** Render `n` frames (added to out) starting at now(); advances the clock. */
     void render (float* left, float* right, int n);
+    /**
+     * The same in two halves, so an effect can be added before the output stage: voices are added
+     * to out (and their sends, mono, to `send` when not null); finish() applies the output gain and
+     * limiter and advances the clock.
+     */
+    void renderVoices (float* left, float* right, float* send, int n);
+    void finish (float* left, float* right, int n);
 
     void setOutputGainDb (double db);
     double outputGainDb() const { return outputDb; }
@@ -70,6 +78,7 @@ private:
         const SampleData* data = nullptr;
         double pos = 0, inc = 1;
         float gain = 0;
+        float send = 0;
         juce::int64 start = 0;
         juce::int64 fadeAt = INT64_MAX;
         juce::int64 naturalEnd = 0;
@@ -83,7 +92,7 @@ private:
     void release (Voice& v);
     void fade (Voice& v, juce::int64 at, int length);
     Voice* freeVoice();
-    void renderVoice (Voice& v, float* left, float* right, int n);
+    void renderVoice (Voice& v, float* left, float* right, float* send, int n);
     void applyOutput (float* left, float* right, int n);
 
     std::array<Voice, poolSize> voices {};

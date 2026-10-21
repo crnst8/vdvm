@@ -19,6 +19,7 @@ import { LibrarySheet } from './ui/LibrarySheet'
 import { MachineSheet } from './ui/MachineSheet'
 import { VolumeSheet } from './ui/VolumeSheet'
 import { PitchSheet } from './ui/PitchSheet'
+import { EchoKey, EchoSheet } from './ui/EchoSheet'
 import { formatSemitones } from './ui/PitchKnob'
 import { OutputSheet } from './ui/OutputSheet'
 import { TempoSheet } from './ui/TempoSheet'
@@ -84,6 +85,7 @@ export function App() {
   /** Volume sheet target: a slot, and the step it was opened from (null = the drum). */
   const [volume, setVolume] = useState<{ slotId: string; step: number | null } | null>(null)
   /** Pitch sheet target: a slot (null = overall only), the step to select, and which knob to focus. */
+  const [echoOpen, setEchoOpen] = useState(false)
   const [pitch, setPitch] = useState<{ slotId: string | null; step: number | null; focus: 'overall' | 'step' } | null>(null)
   const pitchTargetRef = useRef(pitch)
   pitchTargetRef.current = pitch
@@ -920,6 +922,7 @@ export function App() {
         onPage={pageInstruments}
       />
       <div className="pitch-row">
+        {pattern && <EchoKey echo={pattern.echo} disabled={!pattern} onOpen={() => setEchoOpen(true)} />}
         <button
           type="button"
           id="pitch-button"
@@ -1104,6 +1107,18 @@ export function App() {
         }}
         onEditPitch={editPitchFromVolume}
       />
+      {pattern && (
+        <EchoSheet
+          open={echoOpen}
+          onClose={() => setEchoOpen(false)}
+          echo={pattern.echo}
+          bpm={pattern.bpm}
+          slots={slots}
+          tracks={pattern.tracks}
+          onChange={(echo) => dispatch({ type: 'setEcho', echo })}
+          onSend={(slotId, send) => dispatch({ type: 'setEchoSend', slotId, send })}
+        />
+      )}
       <PitchSheet
         key={`${pitch?.slotId ?? ''}:${pitch?.step ?? ''}:${pitch?.focus ?? ''}`}
         open={!!pitch}

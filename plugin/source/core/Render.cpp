@@ -89,7 +89,14 @@ juce::AudioBuffer<float> renderLoop (const PatternState& p, const KitManifest& k
             latestEnd = std::max (latestEnd, st.times[(size_t) step] + s.data->durationSec() / pitchRate (hitPitchCents (p, &it->second, step)));
         }
     }
-    const double seconds = std::max (st.duration + tail, latestEnd + pitchGuardFrames / rate);
+    bool sends = false;
+    for (const auto& slot : kit.slots)
+    {
+        const auto it = p.tracks.find (slot.id);
+        sends |= it != p.tracks.end() && hitSend (p, &it->second) > 0;
+    }
+    const double echoTail = sends ? echoTailSec (p.echo, p.bpm) : 0.0;
+    const double seconds = std::max (st.duration + tail, latestEnd + pitchGuardFrames / rate) + echoTail;
     const int frames = (int) std::ceil (seconds * rate);
     DrumEngine engine;
     engine.prepare (rate);
@@ -109,18 +116,43 @@ juce::AudioBuffer<float> renderLoop (const PatternState& p, const KitManifest& k
             h.when = when;
             h.gainDb = s.data->normalisationDb + extra;
             h.pitchCents = hitPitchCents (p, &it->second, step);
+            h.send = hitSend (p, &it->second);
             h.hat = s.slot->id == "hat-closed" ? HatRole::closed : s.slot->id == "hat-open" ? HatRole::open : HatRole::none;
             engine.trigger (h);
         }
     }
     juce::AudioBuffer<float> out (2, frames);
     out.clear();
+    std::optional<TapeEcho> echo;
+    if (sends)
+    {
+        echo.emplace (rate);
+        echo->set (echoDspParams (p.echo, p.bpm));
+    }
+    std::vector<float> send (4096);
     for (int i = 0; i < frames; i += 4096)
     {
         const int n = std::min (4096, frames - i);
-        engine.render (out.getWritePointer (0, i), out.getWritePointer (1, i), n);
+        float* l = out.getWritePointer (0, i);
+        float* r = out.getWritePointer (1, i);
+        std::fill (send.begin(), send.end(), 0.0f);
+        engine.renderVoices (l, r, echo ? send.data() : nullptr, n);
+        if (echo)
+            echo->process (send.data(), l, r, n);
+        engine.finish (l, r, n);
     }
     engine.killAll();
+    if (echo)
+    {
+        // A self-oscillating echo does not end on its own: fade the last 50 ms (as the browser export).
+        const int fade = std::min (frames, (int) jsRound (0.05 * rate));
+        for (int i = 0; i < fade; ++i)
+        {
+            const float g = (float) i / (float) fade;
+            out.getWritePointer (0)[frames - 1 - i] *= g;
+            out.getWritePointer (1)[frames - 1 - i] *= g;
+        }
+    }
     return out;
 }
 

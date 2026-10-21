@@ -111,6 +111,15 @@ Vite dev server started with `npx vite --mode plugin`), `VDVM_BRIDGE_LOG`
 (-36 to +6 dB, -37 = off) for the first 16 slots of the kit. Kits with more
 slots keep the rest in the pattern only.
 
+Tape echo (the pattern's `echo`): `echoOn`, `echoHead1`-`echoHead3`,
+`echoSpring`, the knobs `echoRate`, `echoIntensity`, `echoVolume`,
+`echoReverb`, `echoBass`, `echoTreble`, `echoInput` (0-1, shown 0-10),
+`echoSync` (Free or a note value) and `echoTape` (New, Used, Old). Per-instrument
+sends stay in the pattern. The echo (`core/TapeEcho`) runs on the voices' sends
+before the output stage; `plugin/source/tests/data/echo-reference.json` holds the
+browser DSP's renders that the C++ port must match (regenerate with
+`npx tsx plugin/scripts/echo-reference.ts`). The reported tail is 12 s.
+
 ## Data locations (macOS)
 
 Builds named `Drums` (before 0.4) are migrated on first run: `~/Library/Application Support/Drums`

@@ -4,7 +4,8 @@ import type { KitManifest, Sample, Slot } from '../contract/types'
 import { AudioEngine, type AudioContextLike } from './engine'
 import { BufferStore, type Fetcher, type LoadRequest } from './buffers'
 import { LOOKAHEAD_SEC, StepScheduler, type SchedulerDeps } from './scheduler'
-import { hitGainDb, hitPitchCents, type PatternState } from '../state/pattern'
+import { hitGainDb, hitPitchCents, hitSend, type PatternState } from '../state/pattern'
+import { echoDspParams } from './echo/dsp'
 import { circuitFor } from '../data/timing'
 import { machineSwing, StepJitter } from './circuit'
 import { hitPlaybackDb } from './loudness'
@@ -68,6 +69,8 @@ export interface TransportDeps {
   onPlayingChange?: (playing: boolean) => void
   /** Scheduler wake-up timer; defaults to setInterval. */
   timer?: Pick<SchedulerDeps, 'setTimer' | 'clearTimer'>
+  /** URL of the echo AudioWorklet module; without it the echo is silent. */
+  echoModule?: string
 }
 
 export class Transport {
@@ -123,8 +126,9 @@ export class Transport {
     if (this.ctx) return this.ctx
     const ctx = this.deps.createContext()
     this.ctx = ctx
-    this.engine = new AudioEngine(ctx)
+    this.engine = new AudioEngine(ctx, this.deps.echoModule)
     if (this.outputDb !== 0) this.engine.setOutputGain(this.outputDb)
+    if (this.pattern) this.engine.setEcho(echoDspParams(this.pattern.echo, this.pattern.bpm))
     this.buffers = new BufferStore(ctx, this.deps.fetcher)
     ctx.onstatechange = () => this.onContextState()
     this.onContextState()
@@ -171,6 +175,7 @@ export class Transport {
   // --- pattern ------------------------------------------------------------
   setPattern(p: PatternState) {
     this.pattern = p
+    this.engine?.setEcho(echoDspParams(p.echo, p.bpm))
   }
 
   // --- kits ---------------------------------------------------------------
@@ -273,6 +278,7 @@ export class Transport {
     this.engine.trigger(buffer, this.ctx!.currentTime, {
       gainDb: hitPlaybackDb(buffer, extra), slotId, kitId: p.kit.id, generation: -1,
       pitchCents: this.pattern ? hitPitchCents(this.pattern, track, step) : 0,
+      send: this.pattern ? hitSend(this.pattern, track) : 0,
     })
     this.triggerTimings.push(performance.now() - t0)
     if (this.triggerTimings.length > 500) this.triggerTimings.shift()
@@ -380,6 +386,7 @@ export class Transport {
       this.engine.trigger(buffer, when + lateness, {
         gainDb: hitPlaybackDb(buffer, extra), slotId: slot.id, kitId: p.kit.id, generation: gen,
         pitchCents: hitPitchCents(pat, track, step),
+        send: hitSend(pat, track),
       })
     }
   }

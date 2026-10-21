@@ -79,6 +79,107 @@
       "type": "integer",
       "minimum": -1200,
       "maximum": 1200
+    },
+    "echo": {
+      "description": "Tape echo and spring reverb modelled on the Roland RE-201 Space Echo. Absent means the default settings with the echo off. Knob values are 0 to 1 at two decimals.",
+      "type": "object",
+      "required": [
+        "on",
+        "heads",
+        "spring",
+        "rate",
+        "intensity",
+        "echo",
+        "reverb",
+        "bass",
+        "treble",
+        "input",
+        "tape"
+      ],
+      "properties": {
+        "on": {
+          "description": "Echo in circuit. Off mutes the tape input; repeats already on the tape fade out.",
+          "type": "boolean"
+        },
+        "heads": {
+          "description": "Playback heads 1, 2 and 3 in the echo mix.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "boolean"
+          }
+        },
+        "spring": {
+          "description": "Spring reverb in circuit.",
+          "type": "boolean"
+        },
+        "rate": {
+          "description": "REPEAT RATE: tape speed, 1 is fastest (shortest repeats). Ignored while sync is set.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sync": {
+          "description": "Tempo sync of the earliest active head; absent or null for the free REPEAT RATE.",
+          "enum": [
+            "1/32",
+            "1/16T",
+            "1/16",
+            "1/8T",
+            "1/16D",
+            "1/8",
+            "1/4T",
+            "1/8D",
+            "1/4",
+            null
+          ]
+        },
+        "intensity": {
+          "description": "INTENSITY: feedback.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "echo": {
+          "description": "ECHO VOLUME.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reverb": {
+          "description": "REVERB VOLUME.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "bass": {
+          "description": "BASS of the echo; 0.5 is flat.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "treble": {
+          "description": "TREBLE of the echo; 0.5 is flat.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "input": {
+          "description": "INPUT VOLUME into the preamp and tape; 0.5 is unity.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tape": {
+          "description": "Condition of the tape loop.",
+          "enum": [
+            "new",
+            "used",
+            "old"
+          ]
+        }
+      }
     }
   },
   "$defs": {
@@ -129,6 +230,12 @@
             "minimum": -1200,
             "maximum": 1200
           }
+        },
+        "echoSend": {
+          "description": "Send level into the tape echo, 0 to 1; amplitude is the send squared. Default 1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       }
     }

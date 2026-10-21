@@ -23,6 +23,81 @@
     "trackGainMinDb": -36,
     "trackGainMaxDb": 6
   },
+  "echo": {
+    "headDelaysSec": [
+      0.069,
+      0.131,
+      0.189
+    ],
+    "speedRatio": 2.575,
+    "slowTauSec": 1.89,
+    "fastTauSec": 1.07,
+    "syncs": {
+      "1/32": 0.125,
+      "1/16T": 0.16666666666666666,
+      "1/16": 0.25,
+      "1/8T": 0.3333333333333333,
+      "1/16D": 0.375,
+      "1/8": 0.5,
+      "1/4T": 0.6666666666666666,
+      "1/8D": 0.75,
+      "1/4": 1
+    },
+    "controlFrames": 32,
+    "tapeLevel": 2,
+    "intensityMaxGain": 1.6,
+    "playbackRail": 1.5,
+    "inputRangeDb": 18,
+    "toneHz": 750,
+    "toneRangeDb": 12,
+    "emphasisHz": 2500,
+    "emphasisDb": 8,
+    "bumpHz": 100,
+    "bumpDb": 2.5,
+    "bumpQ": 1.4,
+    "wowHz": 1,
+    "capstanHz": 9,
+    "rollerHz": 2.1,
+    "wear": {
+      "wow": [
+        0.0006,
+        0.0012,
+        0.0025
+      ],
+      "capstan": [
+        0.0003,
+        0.0005,
+        0.0009
+      ],
+      "roller": [
+        0.0002,
+        0.0004,
+        0.0008
+      ],
+      "lossHz": [
+        11000,
+        9000,
+        6500
+      ],
+      "hissDb": [
+        -74,
+        -68,
+        -62
+      ]
+    },
+    "springDelaysSec": [
+      0.0347,
+      0.0411,
+      0.0463
+    ],
+    "springTransitionHz": 4000,
+    "springStages": 60,
+    "springAllpass": 0.6,
+    "springT60Sec": 2.4,
+    "springLowCutHz": 120,
+    "springDampHz": 6000,
+    "springLevel": 1
+  },
   "gmNotes": {
     "kick": 36,
     "snare": 38,

@@ -1,11 +1,12 @@
 import type { KitManifest } from '../contract/types'
 import type { PatternState } from '../state/pattern'
-import { hitGainDb, hitPitchCents } from '../state/pattern'
+import { hitGainDb, hitPitchCents, hitSend } from '../state/pattern'
 import { chosenSample } from './transport'
 import { swungStepSec } from './scheduler'
 import { CHOKE_FADE_SEC, MASTER_GAIN_DB, dbToGain } from './engine'
 import { hitPlaybackDb } from './loudness'
 import { pitchRate } from './pitch'
+import { TapeEcho, echoDspParams, echoTailSec } from './echo/dsp'
 
 /** Output sample rate of the rendered WAV; the existing export format. */
 const EXPORT_RATE = 44100
@@ -102,8 +103,36 @@ export async function renderWav(p: PatternState, kit: KitManifest, getBuffer: (h
       latestEnd = Math.max(latestEnd, when + buffer.duration / pitchRate(hitPitchCents(p, track, step)))
     }
   })
-  const seconds = Math.max(duration + tail, latestEnd + PITCH_GUARD_FRAMES / EXPORT_RATE)
-  const ctx = new OfflineAudioContext(2, Math.ceil(seconds * EXPORT_RATE), EXPORT_RATE)
+  // The echo renders from a second pass of the same hits at their send levels.
+  const sends = p.echo.on && kit.slots.some((slot) => hitSend(p, p.tracks[slot.id]) > 0)
+  const echoTail = sends ? echoTailSec(p.echo, p.bpm) : 0
+  const seconds = Math.max(duration + tail, latestEnd + PITCH_GUARD_FRAMES / EXPORT_RATE) + echoTail
+  const frames = Math.ceil(seconds * EXPORT_RATE)
+  const dry = await renderPass(p, sounds, times, frames, false)
+  if (!sends) return wavBytes(dry)
+  const send = await renderPass(p, sounds, times, frames, true)
+  const left = dry.getChannelData(0), right = dry.getChannelData(1)
+  const sl = send.getChannelData(0), sr = send.getChannelData(1)
+  const mono = new Float32Array(frames)
+  for (let i = 0; i < frames; i++) mono[i] = 0.5 * (sl[i] + sr[i])
+  const echo = new TapeEcho(EXPORT_RATE)
+  echo.set(echoDspParams(p.echo, p.bpm))
+  echo.process(mono, left, right, frames)
+  // A self-oscillating echo does not end on its own: fade the last 50 ms.
+  const fade = Math.min(frames, Math.round(0.05 * EXPORT_RATE))
+  for (let i = 0; i < fade; i++) {
+    const g = i / fade
+    left[frames - 1 - i] *= g
+    right[frames - 1 - i] *= g
+  }
+  return wavBytes(dry)
+}
+
+type Sound = { slot: KitManifest['slots'][number]; sample: unknown; buffer: AudioBuffer | undefined }
+
+/** One offline render of the loop: the dry mix, or (send = true) every hit at its echo send level. */
+async function renderPass(p: PatternState, sounds: Sound[], times: number[], frames: number, send: boolean) {
+  const ctx = new OfflineAudioContext(2, frames, EXPORT_RATE)
   const hats: { gain: GainNode; source: AudioBufferSourceNode; when: number; level: number; ended: boolean }[] = []
   times.forEach((when, step) => {
     // A closed hat chokes open hats that started before it; same-step hats layer.
@@ -111,7 +140,8 @@ export async function renderWav(p: PatternState, kit: KitManifest, getBuffer: (h
       const track = p.tracks[slot.id]
       if (!track?.steps[step] || !sample || !buffer) continue
       const extra = hitGainDb(track, step)
-      if (extra === -Infinity) continue
+      const sendLevel = send ? hitSend(p, track) : 1
+      if (extra === -Infinity || sendLevel <= 0) continue
       if (slot.id === 'hat-closed') for (const hat of hats) if (!hat.ended && hat.when < when) {
         hat.gain.gain.setValueAtTime(hat.level, when)
         hat.gain.gain.linearRampToValueAtTime(0, when + CHOKE_FADE_SEC)
@@ -122,7 +152,7 @@ export async function renderWav(p: PatternState, kit: KitManifest, getBuffer: (h
       source.buffer = buffer
       source.playbackRate.value = pitchRate(hitPitchCents(p, track, step))
       const gain = ctx.createGain()
-      const level = dbToGain(hitPlaybackDb(buffer, extra) + MASTER_GAIN_DB)
+      const level = dbToGain(hitPlaybackDb(buffer, extra) + MASTER_GAIN_DB) * sendLevel
       gain.gain.value = level
       source.connect(gain)
       gain.connect(ctx.destination)
@@ -130,7 +160,7 @@ export async function renderWav(p: PatternState, kit: KitManifest, getBuffer: (h
       if (slot.id === 'hat-open') hats.push({ source, gain, level, when, ended: false })
     }
   })
-  return wavBytes(await ctx.startRendering())
+  return ctx.startRendering()
 }
 
 export function download(bytes: Uint8Array<ArrayBuffer>, name: string, type: string) {

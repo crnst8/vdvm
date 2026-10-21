@@ -3,6 +3,7 @@
 // storage, decode, Promise or React work happens between a hit and start().
 
 import { pitchRate } from './pitch'
+import { ECHO_PROCESSOR, type EchoDspParams } from './echo/dsp'
 
 export const MASTER_GAIN_DB = -12
 export const MAX_VOICES = 64
@@ -24,6 +25,8 @@ export interface AudioContextLike {
   createGain(): GainNode
   /** Optional so test fakes can omit it; without it a boost runs unlimited. */
   createDynamicsCompressor?(): DynamicsCompressorNode
+  /** Optional so test fakes can omit it; without it the echo is silent. */
+  readonly audioWorklet?: { addModule(url: string): Promise<void> }
   resume(): Promise<void>
 }
 
@@ -35,11 +38,14 @@ export interface TriggerOptions {
   generation: number
   /** Effective sample tuning in cents (overall + step offset); omitted or 0 leaves pitch unchanged. */
   pitchCents?: number
+  /** Linear send into the tape echo, taken after the hit's gain (so chokes and fades apply); omitted or 0 sends nothing. */
+  send?: number
 }
 
 interface Voice {
   source: AudioBufferSourceNode
   gain: GainNode
+  send: GainNode | null
   when: number
   slotId: string
   kitId: string
@@ -59,14 +65,40 @@ export class AudioEngine {
   private limiter: DynamicsCompressorNode | null = null
   private limiting = false
   private voices: Voice[] = []
+  /** Sends from every voice, at the master level, into the echo worklet. */
+  private sendBus: GainNode
+  private echo: AudioWorkletNode | null = null
+  private echoParams: EchoDspParams | null = null
 
-  constructor(ctx: AudioContextLike) {
+  /** `echoModule`: URL of the echo AudioWorklet module (src/audio/echo/worklet.ts); without it the echo is silent. */
+  constructor(ctx: AudioContextLike, echoModule?: string) {
     this.ctx = ctx
     this.master = ctx.createGain()
     this.master.gain.value = dbToGain(MASTER_GAIN_DB)
     this.output = ctx.createGain()
     this.master.connect(this.output)
     this.output.connect(ctx.destination)
+    this.sendBus = ctx.createGain()
+    this.sendBus.gain.value = dbToGain(MASTER_GAIN_DB)
+    if (echoModule && ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
+      ctx.audioWorklet.addModule(echoModule).then(() => {
+        const node = new AudioWorkletNode(ctx as unknown as BaseAudioContext, ECHO_PROCESSOR, {
+          numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit',
+        })
+        this.sendBus.connect(node)
+        node.connect(this.output)
+        this.echo = node
+        if (this.echoParams) node.port.postMessage(this.echoParams)
+      }, () => { /* no worklet support: the echo stays silent */ })
+    }
+  }
+
+  /** Echo settings for the worklet; posted only when they change. */
+  setEcho(params: EchoDspParams): void {
+    const prev = this.echoParams
+    if (prev && JSON.stringify(prev) === JSON.stringify(params)) return
+    this.echoParams = params
+    this.echo?.port.postMessage(params)
   }
 
   /**
@@ -128,8 +160,15 @@ export class AudioEngine {
     gain.gain.value = dbToGain(opts.gainDb)
     source.connect(gain)
     gain.connect(this.master)
+    let send: GainNode | null = null
+    if (opts.send && opts.send > 0) {
+      send = ctx.createGain()
+      send.gain.value = opts.send
+      gain.connect(send)
+      send.connect(this.sendBus)
+    }
     const voice: Voice = {
-      source, gain, when: at, slotId: opts.slotId, kitId: opts.kitId, generation: opts.generation, endAt: Infinity,
+      source, gain, send, when: at, slotId: opts.slotId, kitId: opts.kitId, generation: opts.generation, endAt: Infinity,
       // Pitched-down hits last longer and pitched-up hits shorter; the cap counts the true sounding window.
       naturalEnd: at + buffer.duration / rate,
     }
@@ -174,6 +213,7 @@ export class AudioEngine {
     try {
       v.source.disconnect()
       v.gain.disconnect()
+      v.send?.disconnect()
     } catch {
       /* already disconnected */
     }

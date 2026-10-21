@@ -367,6 +367,63 @@ export interface Pattern {
    * Overall sample tuning in integer cents for every instrument in this pattern (100 cents = 1 semitone). Raised pitch shortens the sample. Default 0. Adds to each track's per-step offsets.
    */
   pitchCents?: number
+  /**
+   * Tape echo and spring reverb modelled on the Roland RE-201 Space Echo. Absent means the default settings with the echo off. Knob values are 0 to 1 at two decimals.
+   */
+  echo?: {
+    /**
+     * Echo in circuit. Off mutes the tape input; repeats already on the tape fade out.
+     */
+    on: boolean
+    /**
+     * Playback heads 1, 2 and 3 in the echo mix.
+     *
+     * @minItems 3
+     * @maxItems 3
+     */
+    heads: [boolean, boolean, boolean]
+    /**
+     * Spring reverb in circuit.
+     */
+    spring: boolean
+    /**
+     * REPEAT RATE: tape speed, 1 is fastest (shortest repeats). Ignored while sync is set.
+     */
+    rate: number
+    /**
+     * Tempo sync of the earliest active head; absent or null for the free REPEAT RATE.
+     */
+    sync?: '1/32' | '1/16T' | '1/16' | '1/8T' | '1/16D' | '1/8' | '1/4T' | '1/8D' | '1/4' | null
+    /**
+     * INTENSITY: feedback.
+     */
+    intensity: number
+    /**
+     * ECHO VOLUME.
+     */
+    echo: number
+    /**
+     * REVERB VOLUME.
+     */
+    reverb: number
+    /**
+     * BASS of the echo; 0.5 is flat.
+     */
+    bass: number
+    /**
+     * TREBLE of the echo; 0.5 is flat.
+     */
+    treble: number
+    /**
+     * INPUT VOLUME into the preamp and tape; 0.5 is unity.
+     */
+    input: number
+    /**
+     * Condition of the tape loop.
+     */
+    tape: 'new' | 'used' | 'old'
+    [k: string]: unknown
+  }
   [k: string]: unknown
 }
 
@@ -453,6 +510,10 @@ export interface Track {
     number,
     number
   ]
+  /**
+   * Send level into the tape echo, 0 to 1; amplitude is the send squared. Default 1.
+   */
+  echoSend?: number
   [k: string]: unknown
 }
 

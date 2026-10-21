@@ -7,6 +7,8 @@ import {
 import { MAX_BOOST_DB, MAX_CUT_DB, PEAK_CEILING_DB, TARGET_LUFS } from '../../src/audio/loudness.ts'
 import { EFFECTIVE_PITCH_MAX_CENTS, EFFECTIVE_PITCH_MIN_CENTS, PITCH_MAX_CENTS, PITCH_MIN_CENTS } from '../../src/audio/pitch.ts'
 import { LATE_LIMIT_SEC } from '../../src/audio/scheduler.ts'
+import * as echoDsp from '../../src/audio/echo/dsp.ts'
+import * as echoSettings from '../../src/audio/echo/settings.ts'
 import { BPM_DEFAULT, BPM_MAX, BPM_MIN, STEPS, TRACK_GAIN_MAX_DB, TRACK_GAIN_MIN_DB } from '../../src/state/pattern.ts'
 
 export function sharedData() {
@@ -34,6 +36,38 @@ export function sharedData() {
       bpmDefault: BPM_DEFAULT,
       trackGainMinDb: TRACK_GAIN_MIN_DB,
       trackGainMaxDb: TRACK_GAIN_MAX_DB,
+    },
+    // Tape echo constants; TapeEcho.h mirrors them (the reference renders check the arithmetic).
+    echo: {
+      headDelaysSec: echoSettings.ECHO_HEAD_DELAYS_SEC,
+      speedRatio: echoSettings.ECHO_SPEED_RATIO,
+      slowTauSec: echoSettings.ECHO_SLOW_TAU_SEC,
+      fastTauSec: echoSettings.ECHO_FAST_TAU_SEC,
+      syncs: echoSettings.ECHO_SYNCS,
+      controlFrames: echoDsp.ECHO_CONTROL_FRAMES,
+      tapeLevel: echoDsp.TAPE_LEVEL,
+      intensityMaxGain: echoDsp.INTENSITY_MAX_GAIN,
+      playbackRail: echoDsp.PLAYBACK_RAIL,
+      inputRangeDb: echoDsp.INPUT_RANGE_DB,
+      toneHz: echoDsp.TONE_HZ,
+      toneRangeDb: echoDsp.TONE_RANGE_DB,
+      emphasisHz: echoDsp.EMPHASIS_HZ,
+      emphasisDb: echoDsp.EMPHASIS_DB,
+      bumpHz: echoDsp.BUMP_HZ,
+      bumpDb: echoDsp.BUMP_DB,
+      bumpQ: echoDsp.BUMP_Q,
+      wowHz: echoDsp.WOW_HZ,
+      capstanHz: echoDsp.CAPSTAN_HZ,
+      rollerHz: echoDsp.ROLLER_HZ,
+      wear: echoDsp.TAPE_WEAR,
+      springDelaysSec: echoDsp.SPRING_DELAYS_SEC,
+      springTransitionHz: echoDsp.SPRING_TRANSITION_HZ,
+      springStages: echoDsp.SPRING_STAGES,
+      springAllpass: echoDsp.SPRING_ALLPASS,
+      springT60Sec: echoDsp.SPRING_T60_SEC,
+      springLowCutHz: echoDsp.SPRING_LOW_CUT_HZ,
+      springDampHz: echoDsp.SPRING_DAMP_HZ,
+      springLevel: echoDsp.SPRING_LEVEL,
     },
     gmNotes: GM_NOTES,
     // Only what the audio thread needs: swing positions and jitter models. Sources stay in src/data/timing.ts.

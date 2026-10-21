@@ -34,6 +34,7 @@ set(DRUMS_CORE_SOURCES
   ${DRUMS_CORE_DIR}/MidiMap.cpp
   ${DRUMS_CORE_DIR}/Resampler.cpp
   ${DRUMS_CORE_DIR}/SampleStore.cpp
+  ${DRUMS_CORE_DIR}/TapeEcho.cpp
   ${DRUMS_CORE_DIR}/DrumEngine.cpp
   ${DRUMS_CORE_DIR}/Playback.cpp
   ${DRUMS_CORE_DIR}/Render.cpp
@@ -70,6 +71,7 @@ if(DRUMS_BUILD_TESTS)
     source/tests/TestUtil.cpp
     source/tests/ContractTests.cpp
     source/tests/DspTests.cpp
+    source/tests/EchoTests.cpp
     source/tests/SequencerTests.cpp
     source/tests/LibraryTests.cpp
     source/tests/StateTests.cpp)

@@ -11,6 +11,18 @@ namespace
     constexpr const char* defaultKitId = "linn-linndrum-main";
 
     juce::String padId (int i) { return "pad" + juce::String (i + 1); }
+
+    // Tape echo parameters (the pattern's `echo`): switches, then the knobs (0..1).
+    const std::array<const char*, 4> echoSwitchIds { "echoHead1", "echoHead2", "echoHead3", "echoSpring" };
+    const std::array<const char*, 7> echoKnobIds { "echoRate", "echoIntensity", "echoVolume", "echoReverb", "echoBass", "echoTreble", "echoInput" };
+    const std::array<const char*, 7> echoKnobNames { "Echo repeat rate", "Echo intensity", "Echo volume", "Echo reverb volume",
+                                                     "Echo bass", "Echo treble", "Echo input" };
+    double& echoKnob (EchoState& e, size_t i)
+    {
+        std::array<double*, 7> knobs { &e.rate, &e.intensity, &e.echo, &e.reverb, &e.bass, &e.treble, &e.input };
+        return *knobs[i];
+    }
+    bool& echoSwitch (EchoState& e, size_t i) { return i < 3 ? e.heads[i] : e.spring; }
 } // namespace
 
 juce::AudioProcessorValueTreeState::ParameterLayout DrumsProcessor::createLayout()
@@ -33,6 +45,27 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrumsProcessor::createLayout
         layout.add (std::make_unique<AudioParameterFloat> (ParameterID { padId (i), 1 }, "Pad " + String (i + 1) + " volume",
                                                            NormalisableRange<float> (-37.0f, 6.0f, 0.5f), 0.0f,
                                                            AudioParameterFloatAttributes().withLabel ("dB").withStringFromValueFunction (db)));
+    const EchoState echoDefaults;
+    layout.add (std::make_unique<AudioParameterBool> (ParameterID { "echoOn", 1 }, "Echo on", false));
+    const std::array<const char*, 4> switchNames { "Echo head 1", "Echo head 2", "Echo head 3", "Echo spring reverb" };
+    for (size_t i = 0; i < echoSwitchIds.size(); ++i)
+    {
+        auto e = echoDefaults;
+        layout.add (std::make_unique<AudioParameterBool> (ParameterID { echoSwitchIds[i], 1 }, switchNames[i], echoSwitch (e, i)));
+    }
+    for (size_t i = 0; i < echoKnobIds.size(); ++i)
+    {
+        auto e = echoDefaults;
+        layout.add (std::make_unique<AudioParameterFloat> (ParameterID { echoKnobIds[i], 1 }, echoKnobNames[i], NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+                                                           (float) echoKnob (e, i),
+                                                           AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
+                                                           { return String (v * 10.0f, 1); })));
+    }
+    StringArray syncs { "Free" };
+    for (const auto& s : echoSyncs)
+        syncs.add (s.name);
+    layout.add (std::make_unique<AudioParameterChoice> (ParameterID { "echoSync", 1 }, "Echo sync", syncs, 0));
+    layout.add (std::make_unique<AudioParameterChoice> (ParameterID { "echoTape", 1 }, "Echo tape", StringArray { "New", "Used", "Old" }, echoDefaults.tape));
     return layout;
 }
 
@@ -70,7 +103,18 @@ DrumsProcessor::DrumsProcessor()
     pRun = apvts.getRawParameterValue ("run");
     for (int i = 0; i < automatablePads; ++i)
         pPads[(size_t) i] = apvts.getRawParameterValue (padId (i));
-    for (const auto* id : { "swing", "pitch", "bpm" })
+    pEchoOn = apvts.getRawParameterValue ("echoOn");
+    pEchoSync = apvts.getRawParameterValue ("echoSync");
+    pEchoTape = apvts.getRawParameterValue ("echoTape");
+    for (size_t i = 0; i < echoSwitchIds.size(); ++i)
+        pEchoSwitches[i] = apvts.getRawParameterValue (echoSwitchIds[i]);
+    for (size_t i = 0; i < echoKnobIds.size(); ++i)
+        pEchoKnobs[i] = apvts.getRawParameterValue (echoKnobIds[i]);
+    for (const auto* id : { "swing", "pitch", "bpm", "echoOn", "echoSync", "echoTape" })
+        apvts.addParameterListener (id, this);
+    for (const auto* id : echoSwitchIds)
+        apvts.addParameterListener (id, this);
+    for (const auto* id : echoKnobIds)
         apvts.addParameterListener (id, this);
     for (int i = 0; i < automatablePads; ++i)
         apvts.addParameterListener (padId (i), this);
@@ -215,6 +259,7 @@ void DrumsProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiB
     live.run = pRun->load() > 0.5f;
     for (size_t i = 0; i < (size_t) automatablePads; ++i)
         live.padGainDb[i] = padParamToGain (pPads[i]->load());
+    live.echo = echoFromParams();
 
     float* left = buffer.getWritePointer (0);
     float* right = buffer.getNumChannels() > 1 ? buffer.getWritePointer (1) : nullptr;
@@ -261,6 +306,14 @@ void DrumsProcessor::applyPatternFromUi (const PatternState& p)
     set ("swing", (float) p.swing);
     set ("pitch", (float) p.pitchCents);
     set ("bpm", (float) p.bpm);
+    auto e = p.echo;
+    set ("echoOn", e.on ? 1.0f : 0.0f);
+    for (size_t i = 0; i < echoSwitchIds.size(); ++i)
+        set (echoSwitchIds[i], echoSwitch (e, i) ? 1.0f : 0.0f);
+    for (size_t i = 0; i < echoKnobIds.size(); ++i)
+        set (echoKnobIds[i], (float) echoKnob (e, i));
+    set ("echoSync", (float) (e.sync + 1));
+    set ("echoTape", (float) e.tape);
     if (const auto& kit = sessionPtr->kit(); kit && kit->id == p.kitId)
     {
         for (int i = 0; i < automatablePads && i < (int) kit->slots.size(); ++i)
@@ -291,6 +344,11 @@ void DrumsProcessor::syncParamsToPattern()
     changed |= std::exchange (p.swing, swing) != swing;
     changed |= std::exchange (p.pitchCents, pitch) != pitch;
     changed |= std::exchange (p.bpm, bpm) != bpm;
+    if (const auto echo = echoFromParams(); ! (echo == p.echo))
+    {
+        p.echo = echo;
+        changed = true;
+    }
     if (const auto& kit = sessionPtr->kit(); kit && kit->id == p.kitId)
     {
         for (int i = 0; i < automatablePads && i < (int) kit->slots.size(); ++i)
@@ -394,6 +452,20 @@ void DrumsProcessor::timerCallback()
         lastHostTempo = tempo;
         emit ("drums:status", statusJson());
     }
+}
+
+EchoState DrumsProcessor::echoFromParams() const
+{
+    EchoState e;
+    e.on = pEchoOn->load() > 0.5f;
+    for (size_t i = 0; i < echoSwitchIds.size(); ++i)
+        echoSwitch (e, i) = pEchoSwitches[i]->load() > 0.5f;
+    // Knobs are stored to two decimals, as the UI does.
+    for (size_t i = 0; i < echoKnobIds.size(); ++i)
+        echoKnob (e, i) = std::clamp (jsRound ((double) pEchoKnobs[i]->load() * 100) / 100, 0.0, 1.0);
+    e.sync = std::clamp ((int) std::lround (pEchoSync->load()) - 1, -1, (int) echoSyncs.size() - 1);
+    e.tape = std::clamp ((int) std::lround (pEchoTape->load()), 0, 2);
+    return e;
 }
 
 juce::var DrumsProcessor::statusJson() const

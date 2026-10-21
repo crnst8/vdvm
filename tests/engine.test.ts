@@ -9,8 +9,8 @@ const setup = () => {
   const opts = (slotId: string, kitId = 'k') => ({ gainDb: 0, slotId, kitId, generation: 1 })
   return { ctx, engine, opts }
 }
-// gains[0] is master, gains[1] the output stage; each voice adds one gain after its source.
-const voiceGain = (ctx: FakeContext, i: number) => ctx.gains[i + 2] as FakeGain
+// gains[0] is master, gains[1] the output stage, gains[2] the echo send bus; each voice adds one gain after its source.
+const voiceGain = (ctx: FakeContext, i: number) => ctx.gains[i + 3] as FakeGain
 
 describe('audio engine', () => {
   it('applies master gain of -12 dB and converts dB with 10^(dB/20)', () => {

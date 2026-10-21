@@ -111,6 +111,7 @@ void DrumEngine::trigger (const Hit& hit)
     v->pos = 0;
     v->inc = (hit.data->rate / rate) * pitch;
     v->gain = (float) (dbToGain (hit.gainDb) * masterGain);
+    v->send = (float) std::max (0.0, hit.send);
     v->start = at;
     v->fadeAt = INT64_MAX;
     v->fadeLen = stopFadeFrames;
@@ -139,7 +140,7 @@ void DrumEngine::cancelFrom (juce::int64 from)
             release (v);
 }
 
-void DrumEngine::renderVoice (Voice& v, float* left, float* right, int n)
+void DrumEngine::renderVoice (Voice& v, float* left, float* right, float* send, int n)
 {
     const juce::int64 blockStart = clock;
     const juce::int64 blockEnd = clock + n;
@@ -169,17 +170,32 @@ void DrumEngine::renderVoice (Voice& v, float* left, float* right, int n)
             release (v);
             return;
         }
-        left[i] += g * cubic (l, len, v.pos);
-        right[i] += g * cubic (r, len, v.pos);
+        const float sl = g * cubic (l, len, v.pos);
+        const float sr = g * cubic (r, len, v.pos);
+        left[i] += sl;
+        right[i] += sr;
+        // The echo input is mono, like the hardware's: the browser's worklet averages its stereo input.
+        if (send != nullptr && v.send > 0)
+            send[i] += v.send * 0.5f * (sl + sr);
         v.pos += v.inc;
     }
 }
 
 void DrumEngine::render (float* left, float* right, int n)
 {
+    renderVoices (left, right, nullptr, n);
+    finish (left, right, n);
+}
+
+void DrumEngine::renderVoices (float* left, float* right, float* send, int n)
+{
     for (auto& v : voices)
         if (v.active)
-            renderVoice (v, left, right, n);
+            renderVoice (v, left, right, send, n);
+}
+
+void DrumEngine::finish (float* left, float* right, int n)
+{
     applyOutput (left, right, n);
     clock += n;
 }

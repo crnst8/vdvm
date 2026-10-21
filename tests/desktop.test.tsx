@@ -57,7 +57,7 @@ describe('desktop panel structure', () => {
     expect(globalOnly).toContain('aria-valuenow="0"')
     expect(globalOnly).not.toContain('step pitch')
     const slot = { id: 'kick', label: 'Kick', icon: 'kick' } as Slot
-    const track = { slotId: 'kick', sampleId: 'kick', steps: new Array(16).fill(false), levels: fullLevels(), gainDb: 0, stepPitchCents: zeroStepPitches() }
+    const track = { slotId: 'kick', sampleId: 'kick', steps: new Array(16).fill(false), levels: fullLevels(), gainDb: 0, stepPitchCents: zeroStepPitches(), echoSend: 1 }
     track.steps[12] = true
     track.stepPitchCents[12] = 700
     const stepped = renderToStaticMarkup(<PitchSheet {...base} slot={slot} track={track} focusStep={12} focus="step" />)
@@ -85,7 +85,7 @@ describe('desktop panel structure', () => {
   })
   it('exposes all step levels, disables off steps and keeps drum mixer volumes separate', () => {
     const slot = { id: 'kick', label: 'Kick', icon: 'kick' } as Slot
-    const track = { slotId: 'kick', sampleId: 'kick', steps: new Array(16).fill(false), levels: fullLevels(), gainDb: -6, stepPitchCents: zeroStepPitches() }
+    const track = { slotId: 'kick', sampleId: 'kick', steps: new Array(16).fill(false), levels: fullLevels(), gainDb: -6, stepPitchCents: zeroStepPitches(), echoSend: 1 }
     track.steps[0] = true
     const props = { open: true, slots: [slot], tracks: { kick: track }, selected: slot, loopLength: 8, playing: false, onOpen: () => {}, onMode: () => {}, onClose: () => {}, onGain: () => {}, onLevel: () => {}, onToggle: () => {}, onAudition: () => {} }
     const steps = renderToStaticMarkup(<DesktopMixer {...props} mode="steps" />)

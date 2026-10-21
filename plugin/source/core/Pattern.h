@@ -6,6 +6,7 @@
 
 #include "Constants.h"
 #include "Contract.h"
+#include "TapeEcho.h"
 
 #include <array>
 #include <map>
@@ -19,6 +20,7 @@ struct TrackState
     double gainDb = 0; // -inf = off
     std::array<double, steps> levels;
     std::array<int, steps> stepPitchCents {};
+    double echoSend = 1; // 0..1, amplitude = send squared
 
     TrackState() { levels.fill (1.0); }
 };
@@ -32,6 +34,7 @@ struct PatternState
     bool circuit = false;
     int length = 16;
     int pitchCents = 0;
+    EchoState echo;
     std::map<juce::String, TrackState> tracks;
     juce::String updatedAt;
 
@@ -41,7 +44,7 @@ struct PatternState
 inline bool operator== (const TrackState& a, const TrackState& b)
 {
     return a.slotId == b.slotId && a.sampleId == b.sampleId && a.stepsOn == b.stepsOn && a.gainDb == b.gainDb
-           && a.levels == b.levels && a.stepPitchCents == b.stepPitchCents;
+           && a.levels == b.levels && a.stepPitchCents == b.stepPitchCents && a.echoSend == b.echoSend;
 }
 
 int clampBpm (double bpm);
@@ -51,6 +54,8 @@ double clampLevel (double x);
 
 /** dB offset from track gain and step level (level squared); -inf when silent. step < 0 = the drum itself. */
 double hitGainDb (const TrackState& track, int step);
+/** Linear send of a track into the echo; 0 while the echo is off. */
+double hitSend (const PatternState& p, const TrackState* track);
 /** Overall pitch plus the track's offset for the step (step < 0: overall only). */
 int hitPitchCents (const PatternState& p, const TrackState* track, int step);
 

@@ -1,6 +1,7 @@
 // Editable pattern state. Pure reducer; no audio or storage here.
 import type { KitManifest, Pattern } from '../contract/types'
 import { clampPitchCents } from '../audio/pitch'
+import { clampSend, defaultEcho, readEcho, sameEcho, type EchoState } from '../audio/echo/settings'
 
 export const STEPS = 16
 export const PAGE_SIZE = 8
@@ -24,6 +25,8 @@ export interface TrackState {
   levels: number[]
   /** Per-step pitch offset in integer cents, added to the pattern's overall pitch. Exactly 16 entries. */
   stepPitchCents: number[]
+  /** Send to the tape echo, 0..1; amplitude is send squared. Default 1. */
+  echoSend: number
 }
 
 export interface PatternState {
@@ -40,6 +43,8 @@ export interface PatternState {
   length: LoopLength
   /** Overall sample tuning in integer cents applied to every instrument. Default 0. */
   pitchCents: number
+  /** Tape echo and spring reverb settings. */
+  echo: EchoState
   /** Keyed by slotId. Tracks for slots missing from the active kit stay here untouched. */
   tracks: Record<string, TrackState>
   /** Saved revision marker: equals `edits` when the current state is saved. */
@@ -65,6 +70,8 @@ export type PatternAction =
   | { type: 'setStepPitch'; slotId: string; step: number; pitchCents: number }
   | { type: 'resetStepPitches'; slotId: string }
   | { type: 'setLength'; length: LoopLength }
+  | { type: 'setEcho'; echo: Partial<EchoState> }
+  | { type: 'setEchoSend'; slotId: string; send: number }
   | { type: 'markSaved' }
   | { type: 'clear' }
   | { type: 'setRhythm'; rhythm: Rhythm }
@@ -108,6 +115,12 @@ export const clampTrackGain = (db: number) =>
   !Number.isFinite(db) || db < TRACK_GAIN_MIN_DB ? -Infinity : Math.min(TRACK_GAIN_MAX_DB, Math.round(db * 2) / 2)
 export const clampLevel = (x: number) => (Number.isFinite(x) ? Math.min(1, Math.max(0, Math.round(x * 100) / 100)) : 1)
 
+/** Linear send of a track into the tape echo; 0 while the echo is off. */
+export function hitSend(pattern: Pick<PatternState, 'echo'>, track: Pick<TrackState, 'echoSend'> | null | undefined): number {
+  if (!pattern.echo.on || !track) return 0
+  return track.echoSend * track.echoSend
+}
+
 /** Total dB offset for a hit from track gain and step level. -Infinity when silent. */
 export function hitGainDb(track: Pick<TrackState, 'gainDb' | 'levels'>, step: number | null): number {
   const level = step === null ? 1 : (track.levels[step] ?? 1)
@@ -116,7 +129,7 @@ export function hitGainDb(track: Pick<TrackState, 'gainDb' | 'levels'>, step: nu
 }
 
 const newTrack = (slotId: string, sampleId: string): TrackState => ({
-  slotId, sampleId, steps: emptySteps(), gainDb: 0, levels: fullLevels(), stepPitchCents: zeroStepPitches(),
+  slotId, sampleId, steps: emptySteps(), gainDb: 0, levels: fullLevels(), stepPitchCents: zeroStepPitches(), echoSend: 1,
 })
 
 export { bindKit as bindKitState }
@@ -124,7 +137,7 @@ export { bindKit as bindKitState }
 export function newPatternState(kit: KitManifest, id: string): PatternState {
   const s: PatternState = {
     id, name: DEFAULT_NAME, kitId: kit.id, kitRevision: kit.revision, bpm: BPM_DEFAULT, length: 16, swing: 50, swingGrid: 16, circuit: false,
-    pitchCents: 0, tracks: {}, edits: 0, savedEdits: null,
+    pitchCents: 0, echo: defaultEcho(), tracks: {}, edits: 0, savedEdits: null,
   }
   return bindKit(s, kit)
 }
@@ -219,6 +232,16 @@ export function patternReducer(state: PatternState, action: PatternAction): Patt
     }
     case 'setLength':
       return action.length === state.length ? state : edited({ ...state, length: action.length })
+    case 'setEcho': {
+      const echo = readEcho({ ...state.echo, ...action.echo })
+      return sameEcho(echo, state.echo) ? state : edited({ ...state, echo })
+    }
+    case 'setEchoSend': {
+      const track = state.tracks[action.slotId]
+      const echoSend = clampSend(action.send)
+      if (!track || track.echoSend === echoSend) return state
+      return edited({ ...state, tracks: { ...state.tracks, [action.slotId]: { ...track, echoSend } } })
+    }
     case 'bindKit': {
       // `silent`: rebinding a loaded pattern to the current kit revision is not a user edit.
       const next = bindKit(state, action.kit)
@@ -256,6 +279,7 @@ export function toPattern(s: PatternState, now = new Date()): Pattern {
     ...(s.swingGrid !== 16 ? { swingGrid: s.swingGrid } : {}),
     ...(s.circuit ? { circuit: true } : {}),
     ...(s.pitchCents !== 0 ? { pitchCents: s.pitchCents } : {}),
+    ...(sameEcho(s.echo, defaultEcho()) ? {} : { echo: { ...s.echo, heads: [...s.echo.heads] as EchoState['heads'] } }),
     tracks: Object.values(s.tracks)
       .sort((a, b) => (a.slotId < b.slotId ? -1 : a.slotId > b.slotId ? 1 : 0))
       .map((t) => {
@@ -265,6 +289,7 @@ export function toPattern(s: PatternState, now = new Date()): Pattern {
         if (t.gainDb !== 0) out.gainDb = t.gainDb === -Infinity ? -60 : t.gainDb
         if (t.levels.some((l) => l !== 1)) out.levels = t.levels.slice() as T['levels']
         if (t.stepPitchCents.some((c) => c !== 0)) out.stepPitchCents = t.stepPitchCents.slice() as T['stepPitchCents']
+        if (t.echoSend !== 1) out.echoSend = t.echoSend
         return out
       }),
     updatedAt: now.toISOString(),
@@ -278,13 +303,17 @@ export function fromPattern(p: Pattern, saved: boolean): PatternState {
     const levels = fullLevels().map((_, i) => clampLevel(t.levels?.[i] ?? 1))
     const src = Array.isArray(t.stepPitchCents) ? t.stepPitchCents : []
     const stepPitchCents = zeroStepPitches().map((_, i) => clampPitchCents(src[i]))
-    tracks[t.slotId] = { slotId: t.slotId, sampleId: t.sampleId, steps, gainDb: clampTrackGain(t.gainDb ?? 0), levels, stepPitchCents }
+    tracks[t.slotId] = {
+      slotId: t.slotId, sampleId: t.sampleId, steps, gainDb: clampTrackGain(t.gainDb ?? 0), levels, stepPitchCents,
+      echoSend: clampSend(t.echoSend),
+    }
   }
   return {
     id: p.id, name: p.name || DEFAULT_NAME, kitId: p.kitId, kitRevision: p.kitRevision,
     bpm: clampBpm(p.bpm), length: p.length === 8 ? 8 : 16,
     swing: Number.isFinite(p.swing) ? Math.min(75, Math.max(50, Math.round(p.swing!))) : 50,
     swingGrid: p.swingGrid === 8 ? 8 : 16, circuit: p.circuit === true, pitchCents: clampPitchCents(p.pitchCents),
+    echo: readEcho(p.echo),
     tracks, edits: 0, savedEdits: saved ? 0 : null,
   }
 }

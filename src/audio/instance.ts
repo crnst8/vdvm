@@ -3,6 +3,7 @@
 import { Transport } from './transport'
 import { preferPlaybackSession, setBackgroundPlayback } from './session'
 import { workerTimer } from './scheduler'
+import echoModule from './echo/worklet.ts?worker&url'
 import { resolveCatalogUrl } from '../contract/urls'
 import { CATALOG_BASE, type CatalogIO } from '../data/catalog'
 import { MediaCache, fetchCatalogJson, rememberCatalogJson } from '../data/cache'
@@ -22,6 +23,7 @@ export const transport = new Transport({
   onGesture: preferPlaybackSession,
   onPlayingChange: setBackgroundPlayback,
   timer: workerTimer(),
+  echoModule,
 })
 
 // Diagnostics for manual timing checks in devtools.

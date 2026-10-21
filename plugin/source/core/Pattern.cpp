@@ -48,6 +48,13 @@ int hitPitchCents (const PatternState& p, const TrackState* track, int step)
     return p.pitchCents + track->stepPitchCents[(size_t) step];
 }
 
+double hitSend (const PatternState& p, const TrackState* track)
+{
+    if (! p.echo.on || track == nullptr)
+        return 0;
+    return track->echoSend * track->echoSend;
+}
+
 PatternState newPatternState (const KitManifest& kit, const juce::String& id)
 {
     PatternState s;
@@ -99,6 +106,8 @@ juce::var toPatternJson (const PatternState& s)
         setProp (o, "circuit", true);
     if (s.pitchCents != 0)
         setProp (o, "pitchCents", s.pitchCents);
+    if (! (s.echo == EchoState {}))
+        setProp (o, "echo", echoToJson (s.echo));
     juce::Array<juce::var> tracks;
     for (const auto& [slotId, t] : s.tracks) // std::map: sorted by slotId, like toPattern
     {
@@ -122,6 +131,8 @@ juce::var toPatternJson (const PatternState& s)
             setProp (tr, "levels", levels);
         if (anyPitch)
             setProp (tr, "stepPitchCents", pitches);
+        if (t.echoSend != 1.0)
+            setProp (tr, "echoSend", t.echoSend);
         tracks.add (tr);
     }
     setProp (o, "tracks", tracks);
@@ -147,6 +158,7 @@ std::optional<PatternState> fromPatternJson (const juce::var& p)
     s.circuit = p["circuit"].isBool() && (bool) p["circuit"];
     const auto& pc = p["pitchCents"];
     s.pitchCents = (pc.isInt() || pc.isDouble() || pc.isInt64()) ? clampPitchCents ((double) pc) : 0;
+    s.echo = readEcho (p["echo"]);
     s.updatedAt = p["updatedAt"].toString();
     for (const auto& t : *p["tracks"].getArray())
     {
@@ -170,6 +182,7 @@ std::optional<PatternState> fromPatternJson (const juce::var& p)
         }
         const auto& g = t["gainDb"];
         tr.gainDb = (g.isInt() || g.isDouble() || g.isInt64()) ? clampTrackGain ((double) g) : 0.0;
+        tr.echoSend = clampEchoKnob (t["echoSend"], 1.0);
         s.tracks[tr.slotId] = tr;
     }
     return s;

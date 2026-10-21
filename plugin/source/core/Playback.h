@@ -12,6 +12,7 @@
 #include "MidiMap.h"
 #include "Pattern.h"
 #include "StepSequencer.h"
+#include "TapeEcho.h"
 #include "Timing.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
@@ -35,6 +36,7 @@ struct PlaybackSlot
     std::array<bool, steps> on {};
     std::array<double, steps> levelDb {}; // 40 log10(level); -inf for level 0
     std::array<int, steps> stepPitchCents {};
+    double echoSend = 1; // 0..1; the hit's send is its square while the echo is on
 };
 
 struct PlaybackSnapshot
@@ -102,6 +104,7 @@ struct LiveParams
     bool hostSync = true;  // HOST tempo mode: follow the host's transport and tempo; FREE: own tempo, host transport ignored
     bool run = false;      // free-run ON/OFF
     std::array<double, automatablePads> padGainDb {};
+    EchoState echo;
 };
 
 struct HostPosition
@@ -155,6 +158,8 @@ public:
     std::atomic<double> hostTempo { 0.0 };
 
     DrumEngine& engine() { return voiceEngine; }
+    /** The echo (null before prepare). */
+    TapeEcho* tapeEcho() { return echo.get(); }
 
 private:
     void triggerSlot (const PlaybackSnapshot& s, int slotIndex, int step, juce::int64 when, double extraDb, double pitchOverride,
@@ -164,6 +169,10 @@ private:
 
     SnapshotExchange exchange;
     DrumEngine voiceEngine;
+    std::unique_ptr<TapeEcho> echo; // created in prepare (message thread)
+    std::vector<float> sendBuffer;
+    EchoDspParams echoParams;
+    bool echoParamsSet = false;
     StepSequencer sequencer;
     const PlaybackSnapshot* current = nullptr;
     const PlaybackSnapshot* pending = nullptr;

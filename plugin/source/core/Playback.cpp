@@ -44,6 +44,7 @@ SnapshotPtr buildSnapshot (const PatternState& pattern, const KitManifest& kit, 
                 ps.levelDb[i] = track->levels[i] > 0 ? 40 * std::log10 (track->levels[i]) : -INFINITY;
                 ps.stepPitchCents[i] = track->stepPitchCents[i];
             }
+            ps.echoSend = track->echoSend;
         }
         s->slots.push_back (std::move (ps));
     }
@@ -116,10 +117,16 @@ void SnapshotExchange::endBlock()
 
 Instrument::Instrument() = default;
 
-void Instrument::prepare (double sampleRate, int)
+void Instrument::prepare (double sampleRate, int maxBlock)
 {
     rate = sampleRate > 0 ? sampleRate : 48000;
     voiceEngine.prepare (rate);
+    if (echo == nullptr || echo->sampleRate() != rate)
+    {
+        echo = std::make_unique<TapeEcho> (rate);
+        echoParamsSet = false;
+    }
+    sendBuffer.assign ((size_t) std::max (maxBlock, 2048), 0.0f);
     sequencer.setSampleRate (rate);
     sequencer.reset();
     wasRunning = false;
@@ -174,6 +181,7 @@ void Instrument::triggerSlot (const PlaybackSnapshot& s, int i, int step, juce::
     hit.when = when;
     hit.gainDb = slot.normalisationDb + gain + level + extraDb;
     hit.pitchCents = usePitchOverride ? pitchOverride : params.pitchCents + (step >= 0 ? slot.stepPitchCents[(size_t) step] : 0);
+    hit.send = params.echo.on ? slot.echoSend * slot.echoSend : 0.0;
     hit.hat = slot.hat;
     hit.kitTag = s.kitTag;
     hit.slotIndex = i;
@@ -350,7 +358,35 @@ void Instrument::process (float* left, float* right, int n, const HostPosition& 
         play (scope.startIndex2, scope.blockSize2);
     }
 
-    voiceEngine.render (left, right, n);
+    // The echo follows the tempo the pattern plays at (host or panel) for its sync.
+    if (echo != nullptr)
+    {
+        const double echoBpm = params.hostSync && host.hasBpm ? host.bpm : params.bpm;
+        const auto dsp = echoDspParams (params.echo, echoBpm);
+        if (! echoParamsSet || ! (dsp == echoParams))
+        {
+            echo->set (dsp);
+            echoParams = dsp;
+            echoParamsSet = true;
+        }
+    }
+    if (echo == nullptr || sendBuffer.empty())
+    {
+        voiceEngine.render (left, right, n);
+    }
+    else
+    {
+        // Voices, then the echo on their sends, then the output stage; in chunks that fit the send buffer.
+        for (int o = 0; o < n;)
+        {
+            const int m = std::min (n - o, (int) sendBuffer.size());
+            std::fill (sendBuffer.begin(), sendBuffer.begin() + m, 0.0f);
+            voiceEngine.renderVoices (left + o, right + o, sendBuffer.data(), m);
+            echo->process (sendBuffer.data(), left + o, right + o, m);
+            voiceEngine.finish (left + o, right + o, m);
+            o += m;
+        }
+    }
     voices = voiceEngine.activeVoices();
     exchange.reportInUse (current, pending);
     exchange.endBlock();

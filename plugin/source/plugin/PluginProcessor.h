@@ -33,7 +33,8 @@ public:
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return 2.0; }
+    /** Longest tail: a fading tape echo (src/audio/echo/dsp.ts echoTailSec caps at 12 s). */
+    double getTailLengthSeconds() const override { return 12.0; }
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
     void setCurrentProgram (int) override {}
@@ -101,6 +102,13 @@ private:
     std::atomic<float>* pSync = nullptr;
     std::atomic<float>* pRun = nullptr;
     std::array<std::atomic<float>*, automatablePads> pPads {};
+    std::atomic<float>* pEchoOn = nullptr;
+    std::atomic<float>* pEchoSync = nullptr;
+    std::atomic<float>* pEchoTape = nullptr;
+    std::array<std::atomic<float>*, 4> pEchoSwitches {};
+    std::array<std::atomic<float>*, 7> pEchoKnobs {};
+    /** Echo settings from the host parameters (any thread). */
+    EchoState echoFromParams() const;
 
     std::atomic<bool> paramsDirty { false };
     bool applyingFromUi = false;
