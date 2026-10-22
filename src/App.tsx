@@ -19,8 +19,9 @@ import { LibrarySheet } from './ui/LibrarySheet'
 import { MachineSheet } from './ui/MachineSheet'
 import { VolumeSheet } from './ui/VolumeSheet'
 import { PitchSheet } from './ui/PitchSheet'
-import { EchoKey, EchoSheet } from './ui/EchoSheet'
-import { formatSemitones } from './ui/PitchKnob'
+import { EchoSheet } from './ui/EchoSheet'
+import { EchoKey, GainKey, PatternKey, PitchKey } from './ui/FunctionKeys'
+import { SearchSheet } from './ui/SearchSheet'
 import { OutputSheet } from './ui/OutputSheet'
 import { TempoSheet } from './ui/TempoSheet'
 import { About } from './ui/About'
@@ -104,6 +105,7 @@ export function App() {
    *  undoable until the next edit. */
   const [presetRun, setPresetRun] = useState<{ id: string; edits: number; presetId: string; before: Rhythm } | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [outputOpen, setOutputOpen] = useState(false)
   /** Steps as they were before the header bin cleared them; undoable until the next edit or timeout. */
   const [cleared, setCleared] = useState<{ id: string; edits: number; steps: Record<string, boolean[]> } | null>(null)
@@ -284,6 +286,7 @@ export function App() {
   const selectedSlot = slots.find((s) => s.id === selectedSlotId) ?? slots[0] ?? null
   const track = pattern && selectedSlot ? pattern.tracks[selectedSlot.id] : null
   const selectedTrackHasPitch = !!(pattern && selectedSlot && pattern.tracks[selectedSlot.id]?.stepPitchCents.some((c) => c !== 0))
+  const pitchChanged = !!pattern && (pattern.pitchCents !== 0 || Object.values(pattern.tracks).some((t) => t.stepPitchCents.some((c) => c !== 0)))
 
   const missing = useMemo(() => {
     const out = new Set<string>()
@@ -712,7 +715,13 @@ export function App() {
   // ---- keyboard ----------------------------------------------------------------
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.defaultPrevented) return
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && (e.key === 'k' || e.key === 'K') && catalog && !document.querySelector('dialog[open]')) {
+        e.preventDefault()
+        setSearchOpen(true)
+        return
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'Escape' && mixer && !document.querySelector('dialog[open]')) {
         setMixer(null)
         requestAnimationFrame(() => document.getElementById('mixer-open-button')?.focus())
@@ -736,6 +745,9 @@ export function App() {
       } else if (e.key === '[' || e.key === ']') {
         e.preventDefault()
         stepMachine(e.key === '[' ? -1 : 1)
+      } else if (e.key === '/' && catalog) {
+        e.preventDefault()
+        setSearchOpen(true)
       } else if (e.key === 'l' || e.key === 'L') {
         e.preventDefault()
         dispatch({ type: 'setLength', length: patternRef.current?.length === 8 ? 16 : 8 })
@@ -812,6 +824,15 @@ export function App() {
     void switchKit(machineKits[(at + 1) % machineKits.length].id)
   }
 
+  const openOutput = () => setOutputOpen(true)
+  const openRhythm = () => setRhythmOpen(true)
+  const patternKey = (className?: string) => (
+    <PatternKey swing={pattern?.swing ?? 50} on={(pattern?.swing ?? 50) > 50 || presetLive} onOpen={openRhythm} className={className} />
+  )
+  const gainKey = <GainKey db={userPrefs.outputDb} onOpen={openOutput} />
+  const pitchKey = <PitchKey cents={pattern?.pitchCents ?? 0} on={pitchChanged} stepped={selectedTrackHasPitch} disabled={!pattern} onOpen={openPitchFromPanel} />
+  const echoKey = <EchoKey echo={pattern?.echo ?? null} disabled={!pattern} onOpen={() => setEchoOpen(true)} />
+
   const playingHalf = playStep === null ? null : playStep < PAGE_SIZE ? 0 : 1
   const visiblePlayStep = playStep !== null && Math.floor(playStep / PAGE_SIZE) === page ? playStep : null
 
@@ -860,8 +881,7 @@ export function App() {
         onClear={clearPattern}
         onUndoClear={clearUndoable ? undoClear : null}
         onAbout={() => setAboutOpen(true)}
-        outputDb={userPrefs.outputDb}
-        onOutput={() => setOutputOpen(true)}
+        onSearch={() => setSearchOpen(true)}
       />
       <hr className="rule rule--single" />
       <LogoBay
@@ -879,8 +899,9 @@ export function App() {
         load={kitLoad}
         onOpenKits={() => setKitsOpen(true)}
         onCycleKit={cycleKit}
-        swing={pattern?.swing ?? 50}
-        onOpenRhythm={() => setRhythmOpen(true)}
+        patternKey={patternKey('groovekey')}
+        functionKeys={<>{gainKey}{patternKey()}{pitchKey}{echoKey}</>}
+        onSearch={() => setSearchOpen(true)}
         circuit={circuit}
         favourite={!!machine && favourites.has(machine.id)}
         onToggleFavourite={() => machine && prefs.toggleFavourite(machine.id)}
@@ -921,22 +942,7 @@ export function App() {
         onHold={(slotId) => openVolume(slotId, null)}
         onPage={pageInstruments}
       />
-      <div className="pitch-row">
-        {pattern && <EchoKey echo={pattern.echo} disabled={!pattern} onOpen={() => setEchoOpen(true)} />}
-        <button
-          type="button"
-          id="pitch-button"
-          className="pitch-key"
-          disabled={!pattern}
-          aria-haspopup="dialog"
-          aria-label={`Pitch${selectedTrackHasPitch ? ', selected instrument has step pitch offsets' : ''}. Overall ${formatSemitones(pattern?.pitchCents ?? 0)}`}
-          onClick={openPitchFromPanel}
-        >
-          <span className="pitch-key__label">PITCH</span>
-          <span className="pitch-key__value">{formatSemitones(pattern?.pitchCents ?? 0)}</span>
-          {selectedTrackHasPitch && <span className="pitch-key__badge">STEPS</span>}
-        </button>
-      </div>
+      {!desktop && <div className="fkeys fkeys--phone">{gainKey}{pitchKey}{echoKey}</div>}
       <div className="rule rule--stack rule--short" aria-hidden="true" />
       {desktop && <>
         <DesktopMixer
@@ -967,7 +973,6 @@ export function App() {
           onSwing={(swing) => dispatch({ type: 'setSwing', swing })}
           onGrid={(grid) => dispatch({ type: 'setSwingGrid', grid })}
           circuit={circuit}
-          onOpenRhythm={() => setRhythmOpen(true)}
         />}
       </>}
       <TransportBar
@@ -1215,7 +1220,23 @@ export function App() {
         onClose={() => setOutputOpen(false)}
         db={userPrefs.outputDb}
         onChange={prefs.setOutputDb}
-        returnFocusId={desktop ? 'output-button-desktop' : 'output-button'}
+        returnFocusId="gain-button"
+      />
+      <SearchSheet
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        desktop={desktop}
+        index={catalog?.index ?? null}
+        favourites={favourites}
+        recents={userPrefs.recents}
+        activeKitId={kit?.id ?? null}
+        loadingKitId={loadingKitId}
+        onLoad={(machineId) => {
+          if (!catalog) return
+          const k = preferredKit(catalog.index, machineId, userPrefs.recents)
+          if (k) void switchKit(k.id)
+        }}
+        onDetails={openMachineDetails}
       />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} anchorId={desktop ? 'brand-button-desktop' : 'brand-button'} />
     </main>

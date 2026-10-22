@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { FourteenSegment } from './Segments'
-import { BooksIcon, BookmarkIcon, BrandRings, SpeakerIcon, TrashIcon, UndoIcon } from './icons'
-import { formatDb } from './VolumeSheet'
+import { BooksIcon, BookmarkIcon, BrandRings, SearchIcon, TrashIcon, UndoIcon } from './icons'
 import { NAME_MAX } from '../state/pattern'
 
 export function Header(props: {
@@ -21,9 +20,8 @@ export function Header(props: {
   onUndoClear: (() => void) | null
   /** The V.D.V.M mark opens the about card. */
   onAbout: () => void
-  /** Output volume in dB (0 = default); the speaker key opens its sheet. */
-  outputDb: number
-  onOutput: () => void
+  /** Phones: the search key in the strip opens machine search. */
+  onSearch: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -31,25 +29,12 @@ export function Header(props: {
     props.onRename(draft)
     setEditing(false)
   }
-  const speaker = (
-    <button
-      type="button"
-      id={props.desktop ? 'output-button-desktop' : 'output-button'}
-      className={props.desktop ? 'save-action save-action--icon' : 'head__icon head__output'}
-      aria-label={`Output volume, ${formatDb(props.outputDb)}`}
-      aria-haspopup="dialog"
-      onClick={props.onOutput}
-    >
-      <SpeakerIcon level={props.outputDb < -12 ? 0 : props.outputDb < 0 ? 1 : 2} />
-      {props.outputDb > 0 && <span className="head__boost" aria-hidden="true" />}
-    </button>
-  )
   return (
     <header className="head" aria-label={props.desktop ? 'Save' : undefined}>
       {props.desktop ? (
         <span className="bay__cap" aria-hidden="true">Save</span>
       ) : (<>
-        {/* Phones: a strip across the top holds the bin and bookmark (left) and the library (right);
+        {/* Phones: a strip across the top holds the bin and bookmark (left) and search and the library (right);
             the V.D.V.M mark sits over it. Its version is in the about card. */}
         {props.onUndoClear ? (
           <button type="button" className="head__icon head__clear head__clear--undo" aria-label="Undo clear" onClick={props.onUndoClear}>
@@ -105,7 +90,7 @@ export function Header(props: {
             <FourteenSegment text={props.name} cells={10} className="seg14" />
           </button>
         )}
-      </div>{speaker}</div>}
+      </div></div>}
       {props.desktop ? (
         <div className="save-actions">
           <button type="button" className="save-action" aria-pressed={props.saved} onClick={props.onSave}>
@@ -118,7 +103,9 @@ export function Header(props: {
           </button>
         </div>
       ) : (<>
-        {speaker}
+        <button type="button" id="search-button" className="head__icon head__search" aria-label="Search machines" aria-haspopup="dialog" onClick={props.onSearch}>
+          <SearchIcon />
+        </button>
         <button type="button" id="library-button" className="head__icon head__books" aria-label="Library" onClick={props.onLibrary}>
           <BooksIcon />
         </button>

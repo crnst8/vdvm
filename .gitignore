@@ -56,3 +56,8 @@ STATUS.md
 !/docs/DEPLOY.md
 !/docs/images/
 .gitignore.public
+site/cfacc.sh
+cfacc.sh
+.local/
+!/src/assets/
+.playwright-mcp/

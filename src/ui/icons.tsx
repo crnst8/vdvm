@@ -218,6 +218,32 @@ export const InfoIcon = (p: P) => (
   </svg>
 )
 
+export const SearchIcon = (p: P) => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" focusable="false" {...p}>
+    <circle cx="13.5" cy="13.5" r="8" fill="none" stroke="currentColor" strokeWidth="2.6" />
+    <path d="M19.6 19.6 27 27" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+  </svg>
+)
+
+/** Pitch: a rising staircase of steps with ledger lines, for semitone steps. */
+export const PitchIcon = (p: P) => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" focusable="false" {...p}>
+    <path d="M5 26h6v-6h6v-6h6V8h4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+    <path d="M5 21h4M5 16h10M5 11h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+  </svg>
+)
+
+/** Echo: a source with repeats spreading out on both sides. */
+export const EchoIcon = (p: P) => (
+  <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" focusable="false" {...p}>
+    <circle cx="16" cy="16" r="2.6" fill="currentColor" />
+    <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <path d="M11.2 11.2a6.8 6.8 0 0 0 0 9.6M20.8 11.2a6.8 6.8 0 0 1 0 9.6" />
+      <path d="M7.4 7.4a12.2 12.2 0 0 0 0 17.2M24.6 7.4a12.2 12.2 0 0 1 0 17.2" opacity="0.6" />
+    </g>
+  </svg>
+)
+
 export const BackIcon = (p: P) => (
   <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" {...p}>
     <path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

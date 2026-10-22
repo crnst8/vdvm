@@ -110,24 +110,6 @@ export function EchoKnob(props: {
 }
 
 /** Panel key that opens the echo sheet; its value shows OFF or the MODE position. */
-export function EchoKey({ echo, disabled, onOpen }: { echo: EchoState; disabled: boolean; onOpen: () => void }) {
-  const value = echoKeyValue(echo)
-  return (
-    <button
-      type="button"
-      id="echo-button"
-      className={`pitch-key echo-key${echo.on ? ' echo-key--on' : ''}`}
-      disabled={disabled}
-      aria-haspopup="dialog"
-      aria-label={`Tape echo, ${echo.on ? (value === 'ON' ? 'on' : `mode ${value.slice(1)}`) : 'off'}. Open echo`}
-      onClick={onOpen}
-    >
-      <span className="pitch-key__label">ECHO</span>
-      <span className="pitch-key__value echo-key__value">{value}</span>
-    </button>
-  )
-}
-
 export function EchoSheet(props: {
   open: boolean
   onClose: () => void

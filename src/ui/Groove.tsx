@@ -1,5 +1,5 @@
 import { SevenSegment } from './Segments'
-import { CircuitIcon, NoteIcon, TriangleIcon, UndoIcon } from './icons'
+import { CircuitIcon, TriangleIcon, UndoIcon } from './icons'
 import { useHoldRepeat } from './hooks'
 import { Sheet } from './Sheet'
 import type { PresetMachine, RhythmPreset } from '../data/presets'
@@ -86,34 +86,12 @@ export function CircuitKey({ c, className = '' }: { c: CircuitProps; className?:
   )
 }
 
-/** Opens the rhythm sheet (presets, swing and grid). The LED is lit while the pattern swings. */
-export function RhythmKey({ swing, onOpen, className = '' }: { swing: number; onOpen: () => void; className?: string }) {
-  const straight = swing <= SWING_MIN
-  return (
-    <button
-      type="button"
-      id="rhythm-button"
-      className={`tkey rhythmkey${className ? ` ${className}` : ''}`}
-      aria-haspopup="dialog"
-      aria-label={`Rhythm: presets and swing, ${straight ? 'straight' : `${swing}% swing`}. Open rhythm`}
-      onClick={onOpen}
-    >
-      <span className="tkey__caption">RHYTHM</span>
-      <span className="rhythmkey__face" aria-hidden="true">
-        <span className={`circuitkey__led${straight ? '' : ' circuitkey__led--on'}`} />
-        <NoteIcon className="rhythmkey__icon" />
-      </span>
-    </button>
-  )
-}
-
 /** Desktop groove panel. */
-export function Groove(props: GrooveProps & { circuit?: CircuitProps; onOpenRhythm: () => void }) {
+export function Groove(props: GrooveProps & { circuit?: CircuitProps }) {
   return (
     <section className="desktop-groove" aria-label="Rhythm">
       <span className="bay__cap" aria-hidden="true">Rhythm</span>
       <div className="groove-controls">
-        <RhythmKey swing={props.swing} onOpen={props.onOpenRhythm} className="tkey--square" />
         <GrooveControls {...props} />
         {props.circuit && <CircuitKey c={props.circuit} />}
       </div>
@@ -121,7 +99,7 @@ export function Groove(props: GrooveProps & { circuit?: CircuitProps; onOpenRhyt
   )
 }
 
-/** Rhythm sheet: swing and grid, then the machines' preset rhythms. Picking a preset replaces the
+/** Pattern sheet: swing and grid, then the machines' preset rhythms. Picking a preset replaces the
  *  pattern's steps and keeps the sheet open; undo returns to the pattern as it was before the
  *  first preset of the run. */
 export function RhythmSheet(props: GrooveProps & {
@@ -133,7 +111,7 @@ export function RhythmSheet(props: GrooveProps & {
   onUndo: (() => void) | null
 }) {
   return (
-    <Sheet open={props.open} onClose={props.onClose} title="Rhythm" closeLabel="Done" className="sheet--groove" returnFocusId="rhythm-button">
+    <Sheet open={props.open} onClose={props.onClose} title="Pattern" closeLabel="Done" className="sheet--groove" returnFocusId="pattern-button">
       <div className="groove-controls groove-controls--sheet">
         <GrooveControls {...props} />
       </div>

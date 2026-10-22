@@ -1,10 +1,9 @@
-import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import type { Machine } from '../contract/types'
 import { useArtwork } from './useArtwork'
-import { BooksIcon, BrandRings, ChevronIcon, StarIcon, TriangleIcon } from './icons'
-import { Art } from './Art'
+import { BooksIcon, BrandRings, InfoIcon, SearchIcon, StarIcon, TriangleIcon } from './icons'
 import { APP_VERSION } from '../version'
-import { CircuitKey, RhythmKey, type CircuitProps } from './Groove'
+import { CircuitKey, type CircuitProps } from './Groove'
 import { useHold } from './hooks'
 
 /** Kit load state for the line under the maker logo; null when the shown kit is loaded and active. */
@@ -16,17 +15,18 @@ export function LogoBay(props: {
   nextLabel: string | null
   onPrev: () => void
   onNext: () => void
-  /** The shown machine's kits; keys appear when there is more than one. */
+  /** The shown machine's kits; the VAR key is enabled when there is more than one. */
   kits: { id: string; label: string; full: string }[]
   activeKitId: string | null
   loadingKitId: string | null
   load: KitLoad | null
   onOpenKits: () => void
-  /** Phones: the variant key cycles to the next kit; hold, right-click or V opens the named list. */
+  /** The VAR key cycles to the next kit; hold, right-click or V opens the named list. */
   onCycleKit: () => void
-  /** Phones: the rhythm key under the logo opens the rhythm sheet. */
-  swing: number
-  onOpenRhythm: () => void
+  /** Phones: the PATTERN key beside VAR. */
+  patternKey: ReactNode
+  /** Desktop: GAIN, PATTERN, PITCH and ECHO in the function cell. */
+  functionKeys: ReactNode
   circuit?: CircuitProps
   favourite: boolean
   onToggleFavourite: () => void
@@ -38,6 +38,7 @@ export function LogoBay(props: {
   onRetry: (() => void) | null
   onDetails: () => void
   onLibrary: () => void
+  onSearch: () => void
   resolve: (rel: string) => string
   /** Desktop: the V.D.V.M mark opens the about card (phones have the mark in the header). */
   onAbout: () => void
@@ -47,10 +48,40 @@ export function LogoBay(props: {
   const hold = useHold()
   const modelName = useModelNameFit(!props.desktop, m?.model ?? null, !!props.circuit)
   const logoUrl = useArtwork(props.logoUrl, m?.logo?.sha256 ?? null)
-  // Logos are sized by area within width/height caps; the desktop manufacturer cell allows a larger mark.
-  // The size goes to CSS as max-width/max-height so a narrower cell shrinks the logo without changing its aspect.
-  const [area, maxW, maxH] = props.desktop ? [19000, 330, 92] : [8000, 200, 48]
-  const logoScale = m?.logo ? Math.min(Math.sqrt(area / (m.logo.width * m.logo.height)), maxW / m.logo.width, maxH / m.logo.height) : 1
+  const photoUrl = useArtwork(props.desktop && m?.photo ? props.resolve(m.photo.url) : null, m?.photo?.sha256 ?? null)
+  // Every plate takes one 3.6:1 box on the wood block, whatever the logo's pixel size and whether it
+  // has loaded, so the block never changes size. The height goes to CSS, which also caps it in short windows.
+  const plateH = props.desktop ? 58 : 36
+  const plateSize = { '--logo-h': `${plateH}px` } as CSSProperties
+
+  const at = Math.max(0, props.kits.findIndex((k) => k.id === (props.loadingKitId ?? props.activeKitId)))
+  const currentKit = props.kits[at]
+  const manyKits = props.kits.length > 1
+  const varKey = (
+    <button
+      type="button"
+      id="kits-button"
+      className={`tkey varkey${props.loadingKitId ? ' kitkey--loading' : ''}`}
+      disabled={!manyKits}
+      aria-label={currentKit ? `Variant ${at + 1} of ${props.kits.length}: ${currentKit.full}.${manyKits ? ' Next variant. Hold for the list' : ''}` : 'Variant'}
+      title={currentKit ? (manyKits ? `${currentKit.full} (${at + 1} of ${props.kits.length})` : currentKit.full) : undefined}
+      {...hold({ onTap: props.onCycleKit, onHold: props.onOpenKits })}
+    >
+      <span className="tkey__caption">VAR</span>
+      <span className="varkey__num">{currentKit ? at + 1 : 1}</span>
+    </button>
+  )
+  const favButton = m && (
+    <button
+      type="button"
+      className={`logobay__fav iconbtn${props.favourite ? ' iconbtn--fav' : ''}`}
+      aria-pressed={props.favourite}
+      aria-label={props.favourite ? `Remove ${m.displayName} from favourites` : `Add ${m.displayName} to favourites`}
+      onClick={props.onToggleFavourite}
+    >
+      <StarIcon filled={props.favourite} />
+    </button>
+  )
   return (
     <section className="logobay">
       {props.desktop && (
@@ -82,10 +113,15 @@ export function LogoBay(props: {
           >
             <TriangleIcon dir="right" />
           </button>
-          <button type="button" id="library-button" className="tkey desktop-library" onClick={props.onLibrary}>
-            <BooksIcon />
-            <span>Open library</span>
-          </button>
+          <div className="machine-tools">
+            <button type="button" id="library-button" className="tkey toolkey" aria-label="Library" title="Library" onClick={props.onLibrary}>
+              <BooksIcon />
+            </button>
+            <button type="button" id="search-button" className="tkey toolkey" aria-label="Search machines" title="Search" aria-haspopup="dialog" onClick={props.onSearch}>
+              <SearchIcon />
+            </button>
+            {varKey}
+          </div>
         </>}
       </div>
       <div className="bay bay--maker">
@@ -98,11 +134,11 @@ export function LogoBay(props: {
           onClick={props.onDetails}
           disabled={!m}
         >
-          <span className="logo__plate">
+          <span className="logo__wood" style={plateSize}>
             {m && logoUrl && m.logo ? (
-              <img src={logoUrl} alt="" width={m.logo.width} height={m.logo.height} style={{ '--logo-w': `${m.logo.width * logoScale}px`, '--logo-h': `${m.logo.height * logoScale}px` } as CSSProperties} className="logo__img" />
+              <img src={logoUrl} alt="" width={m.logo.width} height={m.logo.height} className="logo__img" />
             ) : (
-              <span className="logo__text" aria-hidden="true">{m?.manufacturer ?? ''}</span>
+              <span className="logo__blank" aria-hidden="true"><span className="logo__text">{m?.manufacturer ?? ''}</span></span>
             )}
             {/* The status line carries the same state as text for screen readers. */}
             <span
@@ -124,7 +160,7 @@ export function LogoBay(props: {
           <TriangleIcon dir="right" />
         </button>
       )}
-      <div className={`bay bay--model${props.desktop && props.kits.length <= 1 ? ' bay--solo' : ''}`}>
+      <div className={`bay bay--model${props.desktop && m?.photo ? ' bay--photo' : ''}`}>
         {/* Phones: the MODEL caption sits on the rule and centres over the name; the name scales to the room it has. */}
         {!props.desktop && (
           <div className="modelcell">
@@ -134,99 +170,52 @@ export function LogoBay(props: {
             <div className="modelcell__namerow">
               {m && <span ref={modelName} className="logo__model modelcell__name" aria-hidden="true">{m.model}</span>}
             </div>
-            {m && (
-              <button
-                type="button"
-                className={`logobay__fav iconbtn${props.favourite ? ' iconbtn--fav' : ''}`}
-                aria-pressed={props.favourite}
-                aria-label={props.favourite ? `Remove ${m.displayName} from favourites` : `Add ${m.displayName} to favourites`}
-                onClick={props.onToggleFavourite}
-              >
-                <StarIcon filled={props.favourite} />
-              </button>
-            )}
+            {favButton}
           </div>
         )}
         {props.desktop && <span className="bay__cap" aria-hidden="true">Model</span>}
-        {m && props.desktop && (
-          <div className="logobay__line">
-            <span className="logo__model" aria-hidden="true">{m.model}</span>
-            <button
-              type="button"
-              className={`logobay__fav iconbtn${props.favourite ? ' iconbtn--fav' : ''}`}
-              aria-pressed={props.favourite}
-              aria-label={props.favourite ? `Remove ${m.displayName} from favourites` : `Add ${m.displayName} to favourites`}
-              onClick={props.onToggleFavourite}
-            >
-              <StarIcon filled={props.favourite} />
-            </button>
-          </div>
-        )}
-        {/* The row is always present so the panel below does not move between single- and multi-kit machines. */}
-        {!props.desktop ? (() => {
-          const at = Math.max(0, props.kits.findIndex((k) => k.id === (props.loadingKitId ?? props.activeKitId)))
-          const current = props.kits[at]
-          const many = props.kits.length > 1
-          return (<>
-            <span className="bay__cap bay__cap--groove" aria-hidden="true">Rhythm</span>
-            <div className="kitrow kitrow--phone">
-              <RhythmKey swing={props.swing} onOpen={props.onOpenRhythm} className="groovekey" />
-              <button
-                type="button"
-                id="kits-button"
-                className={`tkey varkey${props.loadingKitId ? ' kitkey--loading' : ''}`}
-                disabled={!many}
-                aria-label={current ? `Variant ${at + 1} of ${props.kits.length}: ${current.full}.${many ? ' Next variant. Hold for the list' : ''}` : 'Variant'}
-                title={current?.full}
-                {...hold({ onTap: props.onCycleKit, onHold: props.onOpenKits })}
-              >
-                <span className="tkey__caption">VAR</span>
-                <span className="varkey__num">{current ? at + 1 : 1}</span>
-              </button>
-              {props.circuit && <CircuitKey c={props.circuit} className="circuitkey--phone" />}
-            </div>
-          </>)
-        })() : <div className="kitrow">
-          {props.kits.length > 1 && (() => {
-            const current = props.kits.find((k) => k.id === (props.loadingKitId ?? props.activeKitId)) ?? props.kits[0]
-            return (
-              <button
-                type="button"
-                id="kits-button"
-                className={`tkey kitbtn${props.loadingKitId ? ' kitkey--loading' : ' kitkey--active'}`}
-                aria-haspopup="dialog"
-                aria-label={`Kit: ${current.full}. ${props.kits.length} kits. Choose kit`}
-                onClick={props.onOpenKits}
-              >
-                <span className="kitkey__led" aria-hidden="true" />
-                <span className="kitkey__label">{current.label}</span>
-                <span className="kitbtn__count" aria-hidden="true">{props.kits.length}</span>
-                <ChevronIcon open={false} className="kitbtn__chev" />
-              </button>
-            )
-          })()}
-        </div>}
-      <div className={`status status--${props.statusKind}`} role="status" aria-live="polite">
-        {props.statusKind === 'loading'
-          ? <span className="visually-hidden">{props.status}</span>
-          : props.status && <span className="status__text" title={props.status}>{props.status}</span>}
-        {props.onRetry && (
-          <button type="button" className="status__retry" onClick={props.onRetry}>
-            Retry
+        {/* Desktop: the machine image when there is one (its box is reserved while it loads); without
+            one, the name row centres on the logo's axis. */}
+        {props.desktop && m?.photo && (
+          <button type="button" className="model__photo" aria-label={`${m.displayName}. Machine details`} onClick={props.onDetails}>
+            {photoUrl && <img src={photoUrl} alt="" width={m.photo.width} height={m.photo.height} draggable={false} />}
           </button>
         )}
-      </div>
-      </div>
-      {props.desktop && <section className="bay bay--about desktop-about" aria-label="About this machine">
-        <span className="bay__cap" aria-hidden="true">About</span>
-        <button type="button" className="desktop-about__photo" onClick={props.onDetails} aria-label={m ? `${m.displayName} photo. Machine details` : 'Machine details'} disabled={!m}>
-          <Art photo={m?.photo ?? null} logo={m?.logo ?? null} label={m?.displayName ?? ''} resolve={props.resolve} eager />
-        </button>
-        <div className="desktop-about__text">
-          <p>{m?.history?.text ?? 'No sourced history is available for this machine yet.'}</p>
-          <button type="button" className="desktop-about__more" onClick={props.onDetails} disabled={!m}>Machine details</button>
+        {m && props.desktop && (
+          <div className="logobay__line">
+            <button type="button" className="logobay__info iconbtn" aria-haspopup="dialog" aria-label={`About the ${m.displayName}`} title="About this machine" onClick={props.onDetails}>
+              <InfoIcon />
+            </button>
+            {/* Most names are 5–8 characters; longer ones step down in size before the ellipsis. */}
+            <span className={`logo__model${m.model.length > 16 ? ' logo__model--longer' : m.model.length > 10 ? ' logo__model--long' : ''}`} title={m.model}>{m.model}</span>
+            {favButton}
+          </div>
+        )}
+        {!props.desktop && <>
+          <span className="bay__cap bay__cap--groove" aria-hidden="true">Pattern</span>
+          <div className="kitrow kitrow--phone">
+            {props.patternKey}
+            {varKey}
+            {props.circuit && <CircuitKey c={props.circuit} className="circuitkey--phone" />}
+          </div>
+        </>}
+        <div className={`status status--${props.statusKind}`} role="status" aria-live="polite">
+          {props.statusKind === 'loading'
+            ? <span className="visually-hidden">{props.status}</span>
+            : props.status && <span className="status__text" title={props.status}>{props.status}</span>}
+          {props.onRetry && (
+            <button type="button" className="status__retry" onClick={props.onRetry}>
+              Retry
+            </button>
+          )}
         </div>
-      </section>}
+      </div>
+      {props.desktop && (
+        <section className="bay bay--function" aria-label="Function">
+          <span className="bay__cap" aria-hidden="true">Function</span>
+          <div className="fkeys">{props.functionKeys}</div>
+        </section>
+      )}
     </section>
   )
 }
