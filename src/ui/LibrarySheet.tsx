@@ -69,7 +69,7 @@ export function LibrarySheet(p: {
       subheader={tabs}
       contentKey={tab}
     >
-      <div id="libpanel" role="tabpanel" aria-labelledby={`libtab-${tab}`} className="libpanel">
+      <div key={tab} id="libpanel" role="tabpanel" aria-labelledby={`libtab-${tab}`} className="libpanel">
         {tab === 'machines' &&
           (p.machines ? (() => {
             const { key, ...rest } = p.machines

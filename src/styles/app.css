@@ -1384,14 +1384,6 @@ body {
   background: var(--key-face);
   color: #3a372e;
 }
-.sheet--volume .sheet__close {
-  min-width: 88px;
-  background: var(--key-flat);
-  color: var(--ink);
-  border: 0;
-  border-bottom: 3px solid var(--bevel-shadow);
-  font-weight: 600;
-}
 .vol__row {
   display: flex;
   align-items: baseline;
@@ -1488,9 +1480,6 @@ body {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
-.vol__hint {
-  font-size: 13px;
-}
 
 /* ---- Function keys ------------------------------------------------------------- */
 /* GAIN, PATTERN, PITCH and ECHO (FunctionKeys.tsx): caption over the LED and icon, like CIRCUIT. */
@@ -1561,17 +1550,6 @@ body {
 }
 
 /* ---- Tape echo --------------------------------------------------------------- */
-.sheet--echo {
-  width: min(100%, 520px);
-}
-.sheet--echo .sheet__close {
-  min-width: 64px;
-  background: var(--key-flat);
-  color: var(--ink);
-  border: 0;
-  border-bottom: 3px solid var(--bevel-shadow);
-  font-weight: 600;
-}
 .sheet--echo :is(.knob__dial, button, input):focus-visible {
   outline: 2px solid var(--playhead);
   outline-offset: 2px;
@@ -1783,19 +1761,8 @@ body {
   }
 }
 
-.sheet--pitch {
-  width: min(100%, 480px);
-}
 .sheet--pitch .sheet__inner {
   padding-inline: 8px;
-}
-.sheet--pitch .sheet__close {
-  min-width: 64px;
-  background: var(--key-flat);
-  color: var(--ink);
-  border: 0;
-  border-bottom: 3px solid var(--bevel-shadow);
-  font-weight: 600;
 }
 .pitch__controls {
   display: grid;
@@ -2139,10 +2106,6 @@ body {
 
 
 /* ==== Library, machine explorer, tempo (2026-09-30 redesign) ================== */
-.sheet--library,
-.sheet--machine {
-  height: min(92dvh, 900px);
-}
 .sheet h2 {
   min-width: 0;
   overflow: hidden;
@@ -2323,6 +2286,10 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* Machine images are cut-out product shots on one shared canvas: show them whole. */
+.art--photo img {
+  object-fit: contain;
 }
 .art--logo {
   background: #262525;
@@ -2529,7 +2496,6 @@ body {
   display: flex;
   gap: 8px;
 }
-.pbackup__text,
 .pbackup__note {
   color: var(--text-muted);
   margin: 0 0 10px;
@@ -2748,10 +2714,6 @@ body {
 }
 
 /* Sounds tab */
-.stab__intro {
-  margin: 0 0 8px;
-  font-size: 13px;
-}
 .srow {
   border-bottom: 1px solid #2c2a29;
 }
@@ -2863,6 +2825,10 @@ body {
   margin-top: 14px;
   border-radius: 10px;
 }
+.machine__hero.art--photo {
+  aspect-ratio: 1447 / 633;
+  padding: 10px;
+}
 .machine__hero.art--logo img {
   padding: 14%;
 }
@@ -2932,6 +2898,12 @@ body {
 .mini__name {
   font-weight: 600;
   font-size: 14px;
+}
+/* A tile without an image is just the name, on a key-height tile. */
+.sheet .mini:not(:has(.mini__art)) {
+  min-height: 52px;
+  justify-content: center;
+  padding: 6px 12px;
 }
 .mini__star {
   position: absolute;
@@ -3052,7 +3024,8 @@ body {
   letter-spacing: 0.2em;
 }
 .tappad__hint {
-  font-size: 13px;
+  min-height: 1.3em;
+  font: 13px/1.3 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   color: var(--ink-muted);
 }
 .tempo-sheet__row {
@@ -3068,10 +3041,6 @@ body {
   color: var(--display-lit);
   font: 600 20px/1 ui-monospace, 'SF Mono', Menlo, monospace;
   text-align: center;
-}
-.tempo-sheet__hint {
-  font-size: 13px;
-  margin: 0;
 }
 .sheet .tkey {
   min-height: 0;
@@ -3261,9 +3230,6 @@ body {
   justify-self: start;
   min-height: 50px;
   padding-top: 4px;
-}
-.sheet--kits {
-  max-height: min(70dvh, 640px);
 }
 .kitgrid {
   display: grid;
@@ -3667,12 +3633,6 @@ body {
 .sheet--groove .tempo__display .seg7 {
   height: 34px;
 }
-.groove-sheet__note {
-  margin: 4px 0 6px;
-  color: var(--text-muted);
-  font-size: 13px;
-  text-align: center;
-}
 /* Presets: a caption rule with the undo key, then one key grid per machine. */
 .presets__rule {
   display: flex;
@@ -3740,6 +3700,343 @@ body {
   .groove-controls--sheet {
     flex-wrap: wrap;
   }
+}
+
+/* ==== Sheets on each device ====================================================== */
+/* Phones: a bottom sheet with a grab handle (drag the header down to close). From 520 px: a
+   centred panel as wide as its content needs (--sheet-w), never wider than the window. The
+   content is a size container, so layouts follow the sheet's width, not the device's. */
+.sheet {
+  --sheet-w: 520px;
+  width: 100%;
+  max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top) - 8px));
+  overscroll-behavior: contain;
+  animation: sheet-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sheet::backdrop {
+  animation: sheet-dim 160ms ease-out;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(32px);
+    opacity: 0;
+  }
+}
+@keyframes sheet-dim {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet::backdrop {
+    animation: none;
+  }
+}
+.sheet__inner {
+  container: sheet / inline-size;
+}
+.sheet__top {
+  touch-action: none;
+}
+.sheet__grip {
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 2px;
+  background: #4a4640;
+}
+.sheet__head {
+  min-height: 52px;
+  padding: 4px 0 8px;
+}
+/* One close key on every sheet: a round X, with Escape and the backdrop as the other ways out. */
+.sheet .sheet__close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #2c2a29;
+  color: var(--text);
+}
+.sheet .sheet__close:hover {
+  background: #3a3733;
+}
+.sheet--library,
+.sheet--machine {
+  height: min(92dvh, 900px);
+}
+.sheet--output,
+.sheet--tempo {
+  --sheet-w: 460px;
+}
+.sheet--kits {
+  --sheet-w: 640px;
+}
+.sheet--pitch {
+  --sheet-w: 640px;
+}
+.sheet--volume {
+  --sheet-w: 840px;
+}
+.sheet--groove {
+  --sheet-w: 880px;
+}
+.sheet--echo {
+  --sheet-w: 960px;
+}
+.sheet--machine {
+  --sheet-w: 980px;
+}
+.sheet--library {
+  --sheet-w: 1120px;
+}
+@media (min-width: 520px) {
+  .sheet {
+    width: min(var(--sheet-w), calc(100vw - 32px));
+    max-height: min(90dvh, 960px);
+    border-radius: 14px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px #34312e;
+  }
+  .sheet--library {
+    height: min(90dvh, 900px);
+  }
+  /* Details change length from machine to machine; the sheet grows down from a fixed top so it
+     never jumps while browsing. */
+  .sheet--machine {
+    height: fit-content;
+    margin-top: max(24px, 5dvh);
+  }
+  .sheet__grip {
+    display: none;
+  }
+  .sheet__top {
+    touch-action: auto;
+  }
+  .sheet__inner {
+    padding: 0 24px 24px;
+  }
+  .sheet--pitch .sheet__inner {
+    padding-inline: 20px;
+  }
+  .sheet__head {
+    min-height: 64px;
+    padding: 10px 0;
+  }
+}
+
+/* Kits: more keys per row when there is room. */
+@container sheet (min-width: 560px) {
+  .kitgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Volume: all 16 step faders in two rows of eight when there is room; otherwise one page of
+   eight at a time with the 1–8 / 9–16 keys. */
+.vol__grid--page0 .vcell--page1,
+.vol__grid--page1 .vcell--page0 {
+  display: none;
+}
+@container sheet (min-width: 640px) {
+  .vol__pages {
+    display: none;
+  }
+  .vol__grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  .vol__grid[class] .vcell {
+    display: flex;
+  }
+  .vol__grid .fader--v {
+    height: 104px;
+  }
+}
+
+/* Pattern: six presets per row. */
+@container sheet (min-width: 640px) {
+  .presetgrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* Echo: the unit on the left, the sends beside it. */
+@container sheet (min-width: 820px) {
+  .echo__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+  }
+  .echo__sendcol .echo__sends-h {
+    margin-top: 16px;
+  }
+}
+
+/* Machine details: plate in the title row when there is no image; the image beside the
+   details when there is room; other machines as a wrapping grid instead of a sideways row. */
+.machine__title {
+  justify-content: flex-start;
+}
+.machine__names {
+  flex: 1;
+  min-width: 0;
+}
+.machine__plate {
+  flex: none;
+  width: auto;
+  height: 40px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.machine .kitgrid {
+  padding-top: 12px;
+}
+@container sheet (min-width: 720px) {
+  .machine--photo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+  .machine > .explore,
+  .machine > .machine__details {
+    grid-column: 1 / -1;
+  }
+  .machine .explore__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .sheet .machine .mini {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Library: machine cards and saved patterns in columns; search and filters on one line. */
+@container sheet (min-width: 760px) {
+  .mtab__tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .mtab__tools .lib__search {
+    flex: 1 1 320px;
+    width: auto;
+  }
+  .mtab__scope {
+    flex-basis: 100%;
+  }
+  .mlist,
+  .plist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 8px 12px;
+  }
+}
+
+/* Library from 520 px: the sheet keeps one height and its tab panel scrolls, so the header
+   and tabs never move. Browsing by manufacturer on a wide sheet: makers on the left, the
+   chosen maker's machines on the right, each column scrolling on its own. */
+@media (min-width: 520px) {
+  .sheet--library[open] {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sheet--library .sheet__inner {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+  .sheet--library .libpanel {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
+  }
+  .sheet--library .libpanel:has(.mtab--split) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+  .sheet--library .tabs {
+    max-width: 640px;
+  }
+}
+.mtab--split {
+  flex: 1;
+  min-height: 0;
+}
+.mtab__split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 12px;
+}
+.mmakers,
+.mmachines {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+.mmakers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 4px;
+}
+.sheet .mmaker {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.sheet .mmaker:hover {
+  background: #262424;
+}
+.sheet .mmaker[aria-current='true'] {
+  background: #2c2a29;
+  box-shadow: inset 3px 0 0 var(--line);
+}
+.mmaker .mgroup__logo {
+  width: 96px;
+  height: auto;
+  max-height: 28px;
+  object-fit: contain;
+}
+.mmaker__name {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mtab--split .mtab__tools {
+  flex: none;
 }
 
 /* ==== Machine search (SearchSheet.tsx) ========================================== */

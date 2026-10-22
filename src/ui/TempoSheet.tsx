@@ -31,7 +31,7 @@ export function TempoSheet(props: { open: boolean; onClose: () => void; bpm: num
   }
 
   return (
-    <Sheet open={props.open} onClose={props.onClose} title="Tempo" closeLabel="Done" className="sheet--tempo" returnFocusId="tempo-display">
+    <Sheet open={props.open} onClose={props.onClose} title="Tempo" className="sheet--tempo" returnFocusId="tempo-display">
       <div className="tempo-sheet">
         <div className="tempo-sheet__readout">
           <button type="button" className="tkey tkey--arrow" aria-label="Tempo down" disabled={props.bpm <= BPM_MIN} {...down}>
@@ -58,7 +58,8 @@ export function TempoSheet(props: { open: boolean; onClose: () => void; bpm: num
         >
           <span className="tappad__led" aria-hidden="true" />
           <span className="tappad__label">TAP</span>
-          <span className="tappad__hint">{count < 2 ? 'Tap in time, 4 or more times' : `${count} taps`}</span>
+          {/* Taps so far, in a slot that is always there. */}
+          <span className="tappad__hint" aria-hidden="true">{count > 0 ? `${count}` : ''}</span>
         </button>
         <div className="tempo-sheet__row">
           <button type="button" className="keybtn keybtn--quiet" onClick={() => props.onSetBpm(Math.round(props.bpm / 2))} disabled={props.bpm / 2 < BPM_MIN}>
@@ -84,7 +85,6 @@ export function TempoSheet(props: { open: boolean; onClose: () => void; bpm: num
             }}
           />
         </div>
-        <p className="muted tempo-sheet__hint">Tempo follows your taps as you go. Press T anywhere to tap without opening this.</p>
       </div>
     </Sheet>
   )

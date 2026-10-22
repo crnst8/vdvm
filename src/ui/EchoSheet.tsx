@@ -140,7 +140,10 @@ export function EchoSheet(props: {
       onChange={(v) => props.onChange({ [key]: v })} />
   )
   return (
-    <Sheet open={props.open} onClose={props.onClose} title="Echo" closeLabel="Done" className="sheet--echo" returnFocusId="echo-button">
+    <Sheet open={props.open} onClose={props.onClose} title="Echo" className="sheet--echo" returnFocusId="echo-button">
+      {/* Wide sheets: the unit's controls on the left, the sends on the right. */}
+      <div className="echo__layout">
+      <div className="echo__unit">
       <div className="echo__mode">
         <button type="button" className={`tkey echo__power${echo.on ? ' tkey--latched' : ''}`} aria-pressed={echo.on}
           aria-label="Echo on" data-autofocus="" onClick={() => props.onChange({ on: !echo.on })}>
@@ -207,8 +210,10 @@ export function EchoSheet(props: {
         </button>
         <output className="echo__sync-ms" aria-label="Repeat time">{echo.sync && ms !== null ? `${ms} ms` : ''}</output>
       </div>
+      </div>
 
-      <h3 className="echo__sends-h">Sends</h3>
+      <section className="echo__sendcol" aria-labelledby="echo-sends-h">
+      <h3 id="echo-sends-h" className="echo__sends-h">Sends</h3>
       <div className="echo__sends">
         {props.slots.map((slot) => {
           const track = props.tracks[slot.id]
@@ -226,6 +231,8 @@ export function EchoSheet(props: {
             </div>
           )
         })}
+      </div>
+      </section>
       </div>
     </Sheet>
   )

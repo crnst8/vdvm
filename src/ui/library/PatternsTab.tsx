@@ -109,7 +109,7 @@ export function PatternsTab(p: PatternsTabProps) {
         </p>
       )}
       <h4 className="lib__subhead">Saved {p.patterns.length ? <span className="mgroup__count">{p.patterns.length}</span> : null}</h4>
-      {p.patterns.length ? <ul className="plist">{p.patterns.map((x) => row(x))}</ul> : <p className="empty">Patterns you save with the bookmark appear here.</p>}
+      {p.patterns.length ? <ul className="plist">{p.patterns.map((x) => row(x))}</ul> : <p className="empty">No saved patterns</p>}
       {p.demo && (
         <>
           <h4 className="lib__subhead">Examples</h4>
@@ -117,7 +117,6 @@ export function PatternsTab(p: PatternsTabProps) {
         </>
       )}
       <h4 className="lib__subhead">Backup</h4>
-      <p className="pbackup__text">Patterns and favourites live in this browser. Export a file to keep a copy or move them to another device; importing adds to what is here.</p>
       <span className="pbackup__actions">
         <button type="button" className="keybtn keybtn--quiet" onClick={p.onExport} disabled={!p.patterns.length}>
           Export

@@ -111,11 +111,10 @@ export function RhythmSheet(props: GrooveProps & {
   onUndo: (() => void) | null
 }) {
   return (
-    <Sheet open={props.open} onClose={props.onClose} title="Pattern" closeLabel="Done" className="sheet--groove" returnFocusId="pattern-button">
+    <Sheet open={props.open} onClose={props.onClose} title="Pattern" className="sheet--groove" returnFocusId="pattern-button">
       <div className="groove-controls groove-controls--sheet">
         <GrooveControls {...props} />
       </div>
-      <p className="groove-sheet__note">Swing delays every second {props.grid === 16 ? 'sixteenth' : 'eighth'} note. 50 is straight.</p>
       <div className="presets__rule">
         <span className="presets__cap">Presets</span>
         <button

@@ -8,6 +8,8 @@ import { instrumentCapacity } from '../src/ui/instrumentWindow'
 import { InstrumentStrip } from '../src/ui/InstrumentStrip'
 import { PitchSheet } from '../src/ui/PitchSheet'
 import { PitchKnob } from '../src/ui/PitchKnob'
+import { VolumeSheet } from '../src/ui/VolumeSheet'
+import { TempoSheet } from '../src/ui/TempoSheet'
 
 describe('desktop panel structure', () => {
   it('shows paging arrows only when the instruments exceed the single row', () => {
@@ -100,5 +102,27 @@ describe('desktop panel structure', () => {
     const closed = renderToStaticMarkup(<DesktopMixer {...props} open={false} mode="drums" />)
     expect(closed).toContain('id="mixer-open-button"')
     expect(closed).not.toContain('type="range"')
+  })
+})
+
+describe('sheets', () => {
+  const slot = { id: 'kick', label: 'Kick', icon: 'kick' } as Slot
+  const track = { slotId: 'kick', sampleId: 'kick', steps: new Array(16).fill(false), levels: fullLevels(), gainDb: 0, stepPitchCents: zeroStepPitches(), echoSend: 1 }
+  it('renders all 16 step faders (narrow sheets page them with CSS) and an X close key', () => {
+    const html = renderToStaticMarkup(
+      <VolumeSheet open onClose={() => {}} slot={slot} track={track} focusStep={9} loopLength={8} playing={false}
+        onGain={() => {}} onLevel={() => {}} onToggleStep={() => {}} onReset={() => {}} onAudition={() => {}} onEditPitch={() => {}} />,
+    )
+    expect(html.match(/type="range"/g)).toHaveLength(17)
+    expect(html).toContain('vol__grid--page0')
+    expect(html.match(/vcell--page1/g)).toHaveLength(8)
+    expect(html).toContain('class="sheet__close" aria-label="Close"')
+    expect(html).toContain('sheet__grip')
+    expect(html).not.toMatch(/<p[ >]/)
+  })
+  it('keeps the tempo sheet free of instructions', () => {
+    const html = renderToStaticMarkup(<TempoSheet open onClose={() => {}} bpm={120} onSetBpm={() => {}} />)
+    expect(html).toContain('TAP')
+    expect(html).not.toMatch(/<p[ >]/)
   })
 })

@@ -244,6 +244,12 @@ export const EchoIcon = (p: P) => (
   </svg>
 )
 
+export const CloseIcon = (p: P) => (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" {...p}>
+    <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+  </svg>
+)
+
 export const BackIcon = (p: P) => (
   <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" {...p}>
     <path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

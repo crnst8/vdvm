@@ -47,7 +47,8 @@ export function VolumeSheet(props: {
   const gainPos = track.gainDb === -Infinity ? OFF_POS : track.gainDb
   const pct = (gainPos - OFF_POS) / (TRACK_GAIN_MAX_DB - OFF_POS)
   const unity = (0 - OFF_POS) / (TRACK_GAIN_MAX_DB - OFF_POS)
-  const cells = Array.from({ length: PAGE_SIZE }, (_, i) => page * PAGE_SIZE + i)
+  // All 16 are rendered; narrow sheets show one page of eight at a time (app.css).
+  const cells = Array.from({ length: STEPS }, (_, i) => i)
   const changed = track.gainDb !== 0 || track.levels.some((l) => l !== 1)
 
   return (
@@ -55,7 +56,7 @@ export function VolumeSheet(props: {
       open={props.open}
       onClose={props.onClose}
       title={`${slot.label} volume`}
-      closeLabel="Done"
+     
       className="sheet--volume"
       returnFocusId={props.focusStep === null ? `tile-${slot.id}` : `step-${props.focusStep}`}
       icon={<Icon className="sheet__icon" />}
@@ -113,7 +114,7 @@ export function VolumeSheet(props: {
             ))}
           </div>
         </div>
-        <div className="vol__grid">
+        <div className={`vol__grid vol__grid--page${page}`}>
           {cells.map((step) => {
             const on = track.steps[step]
             const level = track.levels[step]
@@ -121,7 +122,7 @@ export function VolumeSheet(props: {
             return (
               <div
                 key={step}
-                className={`vcell${on ? ' vcell--on' : ''}${step === props.focusStep ? ' vcell--focus' : ''}${outside ? ' vcell--outside' : ''}`}
+                className={`vcell vcell--page${Math.floor(step / PAGE_SIZE)}${on ? ' vcell--on' : ''}${step === props.focusStep ? ' vcell--focus' : ''}${outside ? ' vcell--outside' : ''}`}
               >
                 <button
                   type="button"
@@ -157,10 +158,6 @@ export function VolumeSheet(props: {
             )
           })}
         </div>
-        <p className="muted vol__hint">
-          Tap a number to switch that step on or off. Changes apply as you move a fader.
-          {props.loopLength < STEPS ? ' Steps 9–16 are outside the 8-step loop.' : ''}
-        </p>
       </section>
     </Sheet>
   )

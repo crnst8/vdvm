@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CatalogIndex, Machine } from '../../contract/types'
 import { preferredKit, sortMachines } from '../../data/catalog'
 import type { ArrowScope } from '../../data/prefs'
@@ -15,6 +15,25 @@ function GroupLogo({ machines, resolve }: { machines: Machine[]; resolve: (rel: 
 }
 
 type Filter = 'all' | 'favourites' | 'recent'
+
+/** Width (px) from which browsing by manufacturer shows makers and machines side by side. */
+const SPLIT_MIN = 760
+
+/** True while the element is at least `min` px wide. */
+function useWiderThan(min: number) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [wide, setWide] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setWide(el.getBoundingClientRect().width >= min)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [min])
+  return [ref, wide] as const
+}
 
 export interface MachinesTabProps {
   index: CatalogIndex
@@ -46,6 +65,13 @@ export function MachinesTab(p: MachinesTabProps) {
   // Browsing all machines shows manufacturers as bundles; the playing machine's maker starts open.
   const bundled = filter === 'all' && !q
   const [openMakers, setOpenMakers] = useState<Set<string>>(() => new Set(activeMaker ? [activeMaker] : []))
+  const [root, wide] = useWiderThan(SPLIT_MIN)
+  const split = wide && bundled
+  const [chosenMaker, setChosenMaker] = useState<string | null>(activeMaker)
+  // Keep the chosen maker in view in its column (on open, and when it changes).
+  useLayoutEffect(() => {
+    if (split) root.current?.querySelector('.mmaker[aria-current]')?.scrollIntoView({ block: 'nearest' })
+  }, [split, chosenMaker, root])
   const toggleMaker = (maker: string, el: HTMLElement | null) => {
     setOpenMakers((cur) => {
       const next = new Set(cur)
@@ -101,8 +127,48 @@ export function MachinesTab(p: MachinesTabProps) {
   )
 
 
+  // Wide: makers on the left, the chosen maker's machines on the right; arrows move between makers.
+  const splitView = () => {
+    const current = groups.find((g) => g.maker === chosenMaker) ?? groups[0]
+    const choose = (i: number) => {
+      const g = groups[(i + groups.length) % groups.length]
+      setChosenMaker(g.maker)
+      requestAnimationFrame(() => document.getElementById(`mmaker-${i}`)?.focus())
+    }
+    return (
+      <div className="mtab__split">
+        <nav className="mmakers" aria-label="Manufacturers">
+          {groups.map((g, i) => (
+            <button
+              key={g.maker}
+              id={`mmaker-${i}`}
+              type="button"
+              className="mmaker"
+              aria-current={g === current ? 'true' : undefined}
+              onClick={() => setChosenMaker(g.maker)}
+              onKeyDown={(e) => {
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+                e.preventDefault()
+                choose(i + (e.key === 'ArrowDown' ? 1 : -1))
+              }}
+            >
+              <GroupLogo machines={g.machines} resolve={p.resolve} />
+              <span className="mmaker__name">{g.maker}</span>
+              {g.maker === activeMaker && <span className="led led--on" aria-label="Playing" />}
+              {g.machines.some((m) => p.favourites.has(m.id)) && <span className="mbundle__star" aria-label="Has favourites">★</span>}
+              <span className="mbundle__count">{g.machines.length}</span>
+            </button>
+          ))}
+        </nav>
+        <section className="mmachines" aria-label={current?.maker}>
+          <ul className="mlist" key={current?.maker}>{current?.machines.map(card)}</ul>
+        </section>
+      </div>
+    )
+  }
+
   return (
-    <div className="mtab">
+    <div ref={root} className={`mtab${split ? ' mtab--split' : ''}`}>
       <div className="mtab__tools">
         <input
           className="lib__search"
@@ -143,13 +209,9 @@ export function MachinesTab(p: MachinesTabProps) {
 
       {shown.length === 0 ? (
         <p className="empty">
-          {q
-            ? `No machines match “${query}”.`
-            : filter === 'favourites'
-              ? 'No favourites yet. Tap ☆ on a machine, or the ☆ under the logo on the panel.'
-              : 'Kits you load appear here.'}
+          {q ? 'No machines' : filter === 'favourites' ? 'No favourites' : 'No recent machines'}
         </p>
-      ) : (
+      ) : split ? splitView() : (
         groups.map((g) =>
           bundled ? (
             <section key={g.maker} className={`mbundle${openMakers.has(g.maker) ? ' mbundle--open' : ''}`}>

@@ -51,7 +51,7 @@ export function PitchSheet(props: {
   const auditionLabel = props.auditionNote ?? (track?.levels[step] === 0 ? 'Step is muted' : `Audition step ${step + 1}`)
 
   return (
-    <Sheet open={props.open} onClose={props.onClose} title="Pitch" closeLabel="Done"
+    <Sheet open={props.open} onClose={props.onClose} title="Pitch"
       className="sheet--pitch" returnFocusId="pitch-button" icon={Icon ? <Icon className="sheet__icon" /> : undefined}>
       <div className={`pitch__controls${slot && track ? '' : ' pitch__controls--solo'}`}>
         <section className="pitch__control" aria-labelledby="pitch-overall-h">

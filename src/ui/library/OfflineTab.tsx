@@ -69,7 +69,7 @@ export function OfflineTab(p: OfflineTabProps) {
           ))}
         </ul>
       ) : (
-        <p className="empty">Kits you save offline play without a connection.</p>
+        <p className="empty">No kits saved offline</p>
       )}
       <div className="ostorage">
         <span>
@@ -80,7 +80,6 @@ export function OfflineTab(p: OfflineTabProps) {
           Clear
         </button>
       </div>
-      <p className="muted">Clearing downloaded sounds keeps your patterns. The browser may remove stored files when the device runs low on space.</p>
     </div>
   )
 }

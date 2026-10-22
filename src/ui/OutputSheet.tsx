@@ -22,8 +22,8 @@ export function OutputSheet(props: {
       open={props.open}
       onClose={props.onClose}
       title="Output volume"
-      closeLabel="Done"
-      className="sheet--volume"
+     
+      className="sheet--output"
       returnFocusId={props.returnFocusId}
       icon={<SpeakerIcon className="sheet__icon" />}
     >

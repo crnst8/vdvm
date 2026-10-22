@@ -19,7 +19,6 @@ export function SoundsTab(p: SoundsTabProps) {
   const [open, setOpen] = useState<string | null>(p.selectedSlotId)
   return (
     <div className="stab">
-      <p className="muted stab__intro">Instruments in {p.kit.label}. Tap one to select and hear it.</p>
       <ul className="slist">
         {p.kit.slots.map((slot) => {
           const Icon = INSTRUMENT_ICONS[iconFor(slot.icon)]

@@ -2,9 +2,11 @@
 // to other machines (same maker, neighbours in library order, surprise me).
 import { useState } from 'react'
 import type { CatalogIndex, Machine } from '../contract/types'
-import { sortMachines } from '../data/catalog'
+import { shortKitLabels, sortMachines } from '../data/catalog'
 import { Sheet } from './Sheet'
 import { Art } from './Art'
+import { KitKeys } from './KitSheet'
+import { useArtwork } from './useArtwork'
 import { ShuffleIcon, StarIcon, TriangleIcon } from './icons'
 
 const STATUS_TEXT: Record<string, string> = {
@@ -36,6 +38,7 @@ export function MachineSheet(props: {
   const m = props.machine
   const index = props.index
   const [surpriseSeed, setSurpriseSeed] = useState(0)
+  const logoUrl = useArtwork(props.open && m?.logo && !m.photo ? props.resolve(m.logo.url) : null, m?.logo?.sha256 ?? null)
   if (!m || !index) return <Sheet open={props.open} onClose={props.onClose} title="Machine" children={null} />
 
   const ordered = sortMachines(index.machines)
@@ -57,15 +60,8 @@ export function MachineSheet(props: {
     props.onNavigate(others[Math.floor(Math.random() * others.length)].id)
   }
 
-  const kitButton = (kitId: string, label: string) => {
-    const active = kitId === props.activeKitId
-    const loading = kitId === props.loadingKitId
-    return (
-      <button key={kitId} type="button" className="keybtn" disabled={active || loading} onClick={() => props.onSelectKit(kitId)}>
-        {active ? `Playing: ${label}` : loading ? `Loading ${props.progress.done}/${props.progress.total}` : kits.length > 1 ? `Load ${label}` : 'Load this kit'}
-      </button>
-    )
-  }
+  const labels = shortKitLabels(m, kits)
+  const kitKeys = kits.map((k) => ({ id: k.id, label: labels.get(k.id) ?? k.label, full: k.label }))
 
   return (
     <Sheet
@@ -77,10 +73,14 @@ export function MachineSheet(props: {
       contentKey={`${m.id}-${surpriseSeed}`}
       className="sheet--machine"
     >
-      <div className="machine">
-        <Art photo={m.photo} logo={m.logo} label={m.displayName} resolve={props.resolve} eager className="machine__hero" />
+      {/* With an image: image beside (wide) or above (narrow) the details. Without one: no
+          placeholder, the maker's plate sits in the title row. */}
+      <div className={`machine${m.photo ? ' machine--photo' : ''}`}>
+        {m.photo && <Art photo={m.photo} logo={null} label={m.displayName} resolve={props.resolve} eager className="machine__hero" />}
+        <div className="machine__info">
         <div className="machine__title">
-          <div>
+          {!m.photo && m.logo && logoUrl && <img className="machine__plate" src={logoUrl} alt="" width={m.logo.width} height={m.logo.height} />}
+          <div className="machine__names">
             <p className="machine__name">{m.model}</p>
             <p className="muted machine__maker">{m.manufacturer}</p>
           </div>
@@ -94,12 +94,10 @@ export function MachineSheet(props: {
             <StarIcon filled={fav} />
           </button>
         </div>
-        <div className="machine__kits">{kits.map((k) => kitButton(k.id, k.label))}</div>
-        {m.history ? (
-          <p className="machine__history">{m.history.text}</p>
-        ) : (
-          <p className="muted">A short history of this machine has not been written yet.</p>
-        )}
+        <KitKeys label={`${m.displayName} kits`} kits={kitKeys} activeKitId={props.activeKitId} loadingKitId={props.loadingKitId}
+          progress={props.progress} onSelectKit={props.onSelectKit} />
+        {m.history && <p className="machine__history">{m.history.text}</p>}
+        </div>
 
         <nav className="explore" aria-label="Explore machines">
           {sameMaker.length > 0 && (
@@ -109,8 +107,8 @@ export function MachineSheet(props: {
                 {sameMaker.map((x) => (
                   <li key={x.id}>
                     <button type="button" className="mini" onClick={() => props.onNavigate(x.id)}>
-                      {/* Same maker: the logo would repeat on every tile, so show a photo or the model name. */}
-                      <Art photo={x.photo} logo={null} label={x.model} resolve={props.resolve} className="mini__art" />
+                      {/* Same maker: the logo would repeat on every tile, so a tile has the machine's image or only its name. */}
+                      {x.photo && <Art photo={x.photo} logo={null} label={x.model} resolve={props.resolve} className="mini__art" />}
                       <span className="mini__name">{x.model}</span>
                       {props.favourites.has(x.id) && <StarIcon filled className="mini__star" aria-label="Favourite" />}
                     </button>
