@@ -21,6 +21,8 @@
   --text-muted: #a39d8a;
   --outside: #151414;
   --focus: #ffc400;
+  /* Top inset every pane pays; raised for the installed app at the end of this file. */
+  --safe-top: env(safe-area-inset-top, 0px);
   /* Phone header strip, its hairlines and the V.D.V.M mark (after the 2026-10-02 phone mockup). */
   --band: #1f242e;
   --line: #b04428;
@@ -33,4 +35,14 @@
   --step-gap: 12px;
   --panel-max: 480px;
   color-scheme: dark;
+}
+
+/* Installed on iOS 26+, the system blurs the page from the status bar to about 40pt below it, and
+   no meta tag or fixed header turns that off. Every pane that pays the top inset therefore pays a
+   band of plain panel beneath it too, so the blur only covers panel colour. The min() keeps the
+   band at zero where there is no top inset: Android, landscape, desktop. */
+@media (display-mode: standalone) {
+  :root {
+    --safe-top: calc(env(safe-area-inset-top, 0px) + min(env(safe-area-inset-top, 0px), 32px));
+  }
 }

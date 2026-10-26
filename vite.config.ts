@@ -31,10 +31,11 @@ function webAppManifest(): Plugin {
         { tag: 'link', attrs: { rel: 'apple-touch-icon', href: 'apple-touch-icon.png' }, injectTo: 'head' },
         { tag: 'meta', attrs: { name: 'mobile-web-app-capable', content: 'yes' }, injectTo: 'head' },
         { tag: 'meta', attrs: { name: 'apple-mobile-web-app-capable', content: 'yes' }, injectTo: 'head' },
-        // Opaque, not black-translucent: on iOS 26 a translucent bar leaves the installed app's web
-        // view one status bar short at the bottom with the top under the status bar (WebKit bug
-        // 301108). iOS reads this when the app is added to the home screen.
-        { tag: 'meta', attrs: { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }, injectTo: 'head' },
+        // Translucent, so the panel runs under the status bar. On iOS 26+ that leaves the web view
+        // one status bar short (WebKit bug 301108; --app-h in app.css corrects it) and blurs the
+        // top of the page (--safe-top in tokens.css keeps controls below the blur). An opaque bar
+        // did not stop the blur on a device. iOS reads this when the app is added to the home screen.
+        { tag: 'meta', attrs: { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }, injectTo: 'head' },
         { tag: 'meta', attrs: { name: 'apple-mobile-web-app-title', content: 'V.D.V.M' }, injectTo: 'head' },
       ]
     },

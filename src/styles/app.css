@@ -3,10 +3,12 @@
 *::after {
   box-sizing: border-box;
 }
-/* App height. iOS 26 sizes 100dvh (and 100%) in an installed web app one status bar short of the
-   screen, leaving a blank band at the bottom; 100lvh is the full screen there. Where the web view
-   starts below an opaque status bar instead, 100lvh overshoots and 100dvh plus the (zero) top
-   inset is right, so the smaller of the two fits both. */
+/* App height. iOS 26 sizes 100dvh (and 100%) in an installed web app with a translucent status
+   bar one status bar short of the screen (WebKit bug 301108), leaving a blank band at the bottom;
+   100lvh is the full screen there. WebKit only shortens the view while the document is shorter
+   than the screen, so html at this height also restores innerHeight. Where the web view starts
+   below an opaque status bar, 100lvh overshoots and 100dvh plus the (zero) top inset is right, so
+   the smaller of the two fits both. This one keeps the raw inset; everything else uses --safe-top. */
 :root {
   --app-h: 100vh;
 }
@@ -57,7 +59,7 @@ body {
   overflow: hidden;
   background: var(--panel);
   /* Top padding is a variable so the phone header strip can sit flush with the top edge. */
-  --pad-top: max(10px, env(safe-area-inset-top));
+  --pad-top: max(10px, var(--safe-top));
   padding: var(--pad-top) max(var(--gutter), env(safe-area-inset-right))
     max(20px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
   display: flex;
@@ -196,7 +198,7 @@ body {
     display: block;
     position: relative;
     height: 44px;
-    margin: calc(env(safe-area-inset-top) - var(--pad-top))
+    margin: calc(var(--safe-top) - var(--pad-top))
       calc(-1 * max(var(--gutter), env(safe-area-inset-right))) 0
       calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
   }
@@ -3602,7 +3604,7 @@ body {
 /* Short portrait phones (browser toolbars shown, small models): tighter spacing, same 44 px targets. */
 @media (max-width: 999.98px) and (max-height: 760px) {
   .panel {
-    --pad-top: max(6px, env(safe-area-inset-top));
+    --pad-top: max(6px, var(--safe-top));
     padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
   .rule--single {
@@ -3735,7 +3737,7 @@ body {
     grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     grid-template-areas: 'head bank' 'logobay bank' 'strip bank' '. bank' 'transport fkeys';
     column-gap: 20px;
-    --pad-top: max(6px, env(safe-area-inset-top));
+    --pad-top: max(6px, var(--safe-top));
     padding-bottom: max(6px, env(safe-area-inset-bottom));
   }
   .panel > .rule {
@@ -4024,7 +4026,7 @@ body {
 .sheet {
   --sheet-w: 520px;
   width: 100%;
-  max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top) - 8px));
+  max-height: min(92dvh, calc(100dvh - var(--safe-top) - 8px));
   overscroll-behavior: contain;
   animation: sheet-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -4382,7 +4384,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: max(10px, env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) 10px max(var(--gutter), env(safe-area-inset-left));
+  padding: max(10px, var(--safe-top)) max(var(--gutter), env(safe-area-inset-right)) 10px max(var(--gutter), env(safe-area-inset-left));
   border-bottom: 1px solid color-mix(in srgb, var(--divider) 45%, transparent);
 }
 .search__glass {
