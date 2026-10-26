@@ -28,7 +28,7 @@ services:
       - "127.0.0.1:${DRUMS_PORT:-8080}:8080"
 
   tunnel:
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.3
     profiles: ["tunnel"]
     restart: unless-stopped
     command: tunnel --no-autoupdate run
